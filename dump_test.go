@@ -74,7 +74,7 @@ import (
 
 // dumpTest is used to describe a test to be perfomed against the Dump method.
 type dumpTest struct {
-	in    interface{}
+	in    any
 	wants []string
 }
 
@@ -83,7 +83,7 @@ var dumpTests = make([]dumpTest, 0)
 
 // addDumpTest is a helper method to append the passed input and desired result
 // to dumpTests
-func addDumpTest(in interface{}, wants ...string) {
+func addDumpTest(in any, wants ...string) {
 	test := dumpTest{in, wants}
 	dumpTests = append(dumpTests, test)
 }
@@ -313,7 +313,7 @@ func addArrayDumpTests() {
 	v2 := [3]pstringer{v2i0, v2i1, v2i2}
 	nv2 := (*[3]pstringer)(nil)
 	pv2 := &v2
-	v2t := "utter_test.pstringer"
+	v2t := "dumper_test.pstringer"
 	v2s := "{\n " + v2t + "(\"1\"),\n " + v2t + "(\"2\"),\n " + v2t + "(\"3\"),\n}"
 	addDumpTest(v2, "[3]"+v2t+v2s+"\n")
 	addDumpTest(pv2, "&[3]"+v2t+v2s+"\n")
@@ -322,8 +322,8 @@ func addArrayDumpTests() {
 
 	// Array containing interfaces.
 	v3i0 := "one"
-	v3 := [3]interface{}{v3i0, int(2), uint(3)}
-	nv3 := (*[3]interface{})(nil)
+	v3 := [3]any{v3i0, int(2), uint(3)}
+	nv3 := (*[3]any)(nil)
 	pv3 := &v3
 	v3t := "[3]interface{}"
 	v3t2 := "string"
@@ -375,7 +375,7 @@ func addSliceDumpTests() {
 	v2 := []pstringer{v2i0, v2i1, v2i2}
 	nv2 := (*[]pstringer)(nil)
 	pv2 := &v2
-	v2t := "utter_test.pstringer"
+	v2t := "dumper_test.pstringer"
 	v2s := "{\n " + v2t + "(\"1\"),\n " + v2t + "(\"2\"),\n " + v2t + "(\"3\"),\n}"
 	addDumpTest(v2, "[]"+v2t+v2s+"\n")
 	addDumpTest(pv2, "&[]"+v2t+v2s+"\n")
@@ -384,8 +384,8 @@ func addSliceDumpTests() {
 
 	// Slice containing interfaces.
 	v3i0 := "one"
-	v3 := []interface{}{v3i0, int(2), uint(3), nil}
-	nv3 := (*[]interface{})(nil)
+	v3 := []any{v3i0, int(2), uint(3), nil}
+	nv3 := (*[]any)(nil)
 	pv3 := &v3
 	v3t := "[]interface{}"
 	v3t2 := "string"
@@ -445,8 +445,8 @@ func addStringDumpTests() {
 
 func addInterfaceDumpTests() {
 	// Nil interface.
-	var v interface{}
-	nv := (*interface{})(nil)
+	var v any
+	nv := (*any)(nil)
 	pv := &v
 	vt := "interface{}"
 	vs := "(nil)"
@@ -456,7 +456,7 @@ func addInterfaceDumpTests() {
 	addDumpTest(nv, "(*"+vt+")"+vs+"\n")
 
 	// Sub-interface.
-	v2 := interface{}(uint16(65535))
+	v2 := any(uint16(65535))
 	pv2 := &v2
 	v2t := "uint16"
 	v2s := "0xffff"
@@ -491,9 +491,9 @@ func addMapDumpTests() {
 	nilMap2 := map[pstringer]pstringer(nil)
 	nm2 := (*map[pstringer]pstringer)(nil)
 	pm2 := &m2
-	m2t := "map[utter_test.pstringer]utter_test.pstringer"
-	m2t1 := "utter_test.pstringer"
-	m2t2 := "utter_test.pstringer"
+	m2t := "map[dumper_test.pstringer]dumper_test.pstringer"
+	m2t1 := "dumper_test.pstringer"
+	m2t2 := "dumper_test.pstringer"
 	m2s := "{\n " + m2t1 + "(\"one\"): " + m2t2 + "(\"1\"),\n}"
 	addDumpTest(m2, m2t+m2s+"\n")
 	addDumpTest(pm2, "&"+m2t+m2s+"\n")
@@ -503,9 +503,9 @@ func addMapDumpTests() {
 
 	// Map with interface keys and values.
 	k3 := "one"
-	m3 := map[interface{}]interface{}{k3: 1}
-	nilMap3 := map[interface{}]interface{}(nil)
-	nm3 := (*map[interface{}]interface{})(nil)
+	m3 := map[any]any{k3: 1}
+	nilMap3 := map[any]any(nil)
+	nm3 := (*map[any]any)(nil)
 	pm3 := &m3
 	m3t := "map[interface{}]interface{}"
 	m3t1 := "string"
@@ -519,9 +519,9 @@ func addMapDumpTests() {
 
 	// Map with nil interface value.
 	k4 := "nil"
-	m4 := map[string]interface{}{k4: nil}
-	nilMap4 := map[string]interface{}(nil)
-	nm4 := (*map[string]interface{})(nil)
+	m4 := map[string]any{k4: nil}
+	nilMap4 := map[string]any(nil)
+	nm4 := (*map[string]any)(nil)
 	pm4 := &m4
 	m4t := "map[string]interface{}"
 	m4t1 := "string"
@@ -543,7 +543,7 @@ func addStructDumpTests() {
 	v := s1{127, 255}
 	nv := (*s1)(nil)
 	pv := &v
-	vt := "utter_test.s1"
+	vt := "dumper_test.s1"
 	vt2 := "int8"
 	vt3 := "uint8"
 	vs := "{\n a: " + vt2 + "(127),\n b: " + vt3 + "(0xff),\n}"
@@ -560,8 +560,8 @@ func addStructDumpTests() {
 	v2 := s2{s1{127, 255}, true}
 	nv2 := (*s2)(nil)
 	pv2 := &v2
-	v2t := "utter_test.s2"
-	v2t2 := "utter_test.s1"
+	v2t := "dumper_test.s2"
+	v2t2 := "dumper_test.s1"
 	v2t3 := "int8"
 	v2t4 := "uint8"
 	v2t5 := "bool"
@@ -580,8 +580,8 @@ func addStructDumpTests() {
 	v3 := s3{"test", "test2"}
 	nv3 := (*s3)(nil)
 	pv3 := &v3
-	v3t := "utter_test.s3"
-	v3t2 := "utter_test.pstringer"
+	v3t := "dumper_test.s3"
+	v3t2 := "dumper_test.pstringer"
 	v3s := "{\n s: " + v3t2 + "(\"test\"),\n S: " + v3t2 + "(\"test2\"),\n}"
 	addDumpTest(v3, v3t+v3s+"\n")
 	addDumpTest(pv3, "&"+v3t+v3s+"\n")
@@ -593,8 +593,8 @@ func addStructDumpTests() {
 	v4 := embedwrap{embed: &e, e: &e}
 	nv4 := (*embedwrap)(nil)
 	pv4 := &v4
-	v4t := "utter_test.embedwrap"
-	v4t2 := "utter_test.embed"
+	v4t := "dumper_test.embedwrap"
+	v4t2 := "dumper_test.embed"
 	v4t3 := "string"
 	v4s := "{\n embed: &" + v4t2 + "{\n  a: " + v4t3 + "(\"embedstr\"),\n },\n e: (*" + v4t2 + ")(<already shown>),\n}"
 	addDumpTest(v4, v4t+v4s+"\n")
@@ -610,8 +610,8 @@ func addStructDumpTests() {
 	}
 	ip1 := &ss5{"shared"}
 	v5 := s5{ip1, ip1}
-	v5t := "utter_test.s5"
-	v5s := "utter_test.ss5"
+	v5t := "dumper_test.s5"
+	v5s := "dumper_test.ss5"
 	addDumpTest(v5, v5t+"{\n p1: &"+v5s+"{\n  s: string(\"shared\"),\n },\n p2: (*"+v5s+")(<already shown>),\n}\n")
 
 	// Struct that has fields that share a value in pointer chain that is not a cycle.
@@ -622,8 +622,8 @@ func addStructDumpTests() {
 	}
 	ipp1 := &ss6{"shared"}
 	v6 := s6{&ipp1, &ipp1}
-	v6t := "utter_test.s6"
-	v6s := "utter_test.ss6"
+	v6t := "dumper_test.s6"
+	v6s := "dumper_test.ss6"
 	addDumpTest(v6, v6t+"{\n p1: &&"+v6s+"{\n  s: string(\"shared\"),\n },\n p2: (**"+v6s+")(<already shown>),\n}\n")
 }
 
@@ -765,7 +765,7 @@ func addFuncDumpTests() {
 	addDumpTest(nv2, "(*"+v2t+")(nil)\n")
 
 	// Function with multiple params and multiple returns.
-	var v3 = func(i int, s string) (b bool, err error) {
+	v3 := func(i int, s string) (b bool, err error) {
 		return true, nil
 	}
 	nv3 := (*func(int, string) (bool, error))(nil)
@@ -786,7 +786,7 @@ func addCircularDumpTests() {
 	v := circular{nil}
 	v.c = &v
 	pv := &v
-	vt := "utter_test.circular"
+	vt := "dumper_test.circular"
 	vs := "{\n c: &" + vt + "{\n  c: (*" + vt + ")(<already shown>),\n },\n}"
 	vs2 := "{\n c: (*" + vt + ")(<already shown>),\n}"
 	addDumpTest(v, vt+vs+"\n")
@@ -798,8 +798,8 @@ func addCircularDumpTests() {
 	ts2 := xref2{&v2}
 	v2.ps2 = &ts2
 	pv2 := &v2
-	v2t := "utter_test.xref1"
-	v2t2 := "utter_test.xref2"
+	v2t := "dumper_test.xref1"
+	v2t2 := "dumper_test.xref2"
 	v2s := "{\n ps2: &" + v2t2 +
 		"{\n  ps1: &" + v2t +
 		"{\n   ps2: (*" + v2t2 + ")(<already shown>),\n  },\n },\n}"
@@ -815,9 +815,9 @@ func addCircularDumpTests() {
 	tic2.ps3 = &tic3
 	v3.ps2 = &tic2
 	pv3 := &v3
-	v3t := "utter_test.indirCir1"
-	v3t2 := "utter_test.indirCir2"
-	v3t3 := "utter_test.indirCir3"
+	v3t := "dumper_test.indirCir1"
+	v3t2 := "dumper_test.indirCir2"
+	v3t3 := "dumper_test.indirCir3"
 	v3s := "{\n ps2: &" + v3t2 +
 		"{\n  ps3: &" + v3t3 +
 		"{\n   ps1: &" + v3t +
@@ -854,7 +854,7 @@ func TestDump(t *testing.T) {
 	t.Logf("Running %d tests", len(dumpTests))
 	for i, test := range dumpTests {
 		buf := new(bytes.Buffer)
-		utter.Fdump(buf, test.in)
+		dumper.Fdump(buf, test.in)
 		s := buf.String()
 		if testFailed(s, test.wants) {
 			t.Errorf("Dump #%d\n got: %q\n %s", i, s, stringizeWants(test.wants))
@@ -864,7 +864,7 @@ func TestDump(t *testing.T) {
 }
 
 func TestDumpOmitZero(t *testing.T) {
-	cfg := utter.ConfigState{OmitZero: true, SortKeys: true}
+	cfg := dumper.ConfigState{OmitZero: true, SortKeys: true}
 	type sub struct {
 		a, b int
 	}
@@ -883,53 +883,53 @@ func TestDumpOmitZero(t *testing.T) {
 	}{
 		{
 			val:      st{},
-			expected: "utter_test.st{\n}\n",
+			expected: "dumper_test.st{\n}\n",
 		},
 		{
 			val:      st{i: 1},
-			expected: "utter_test.st{\ni: int(1),\n}\n",
+			expected: "dumper_test.st{\ni: int(1),\n}\n",
 		},
 		{
 			val:      st{s: "string"},
-			expected: "utter_test.st{\ns: string(\"string\"),\n}\n",
+			expected: "dumper_test.st{\ns: string(\"string\"),\n}\n",
 		},
 		{
 			val:      st{v: []int{1, 2}},
-			expected: "utter_test.st{\nv: []int{int(1), int(2)},\n}\n",
+			expected: "dumper_test.st{\nv: []int{int(1), int(2)},\n}\n",
 		},
 		{
 			val:      st{m: map[int]int{1: -1, 2: -2}},
-			expected: "utter_test.st{\nm: map[int]int{\nint(1): int(-1),\nint(2): int(-2),\n},\n}\n",
+			expected: "dumper_test.st{\nm: map[int]int{\nint(1): int(-1),\nint(2): int(-2),\n},\n}\n",
 		},
 		{
 			val:      st{a: [3]int{1, 2, 3}},
-			expected: "utter_test.st{\na: [3]int{int(1), int(2), int(3)},\n}\n",
+			expected: "dumper_test.st{\na: [3]int{int(1), int(2), int(3)},\n}\n",
 		},
 		{
 			val:      st{p: new(int)},
-			expected: "utter_test.st{\np: &int(0),\n}\n",
+			expected: "dumper_test.st{\np: &int(0),\n}\n",
 		},
 		{
 			val:      st{st: sub{a: 1, b: 2}},
-			expected: "utter_test.st{\nst: utter_test.sub{\na: int(1),\nb: int(2),\n},\n}\n",
+			expected: "dumper_test.st{\nst: dumper_test.sub{\na: int(1),\nb: int(2),\n},\n}\n",
 		},
 		{
 			val:      st{st: sub{a: 0, b: 2}},
-			expected: "utter_test.st{\nst: utter_test.sub{\nb: int(2),\n},\n}\n",
+			expected: "dumper_test.st{\nst: dumper_test.sub{\nb: int(2),\n},\n}\n",
 		},
 	}
-	for i, test := range tests {
-		s := cfg.Sdump(test.val)
-		if s != test.expected {
-			t.Errorf("Dump #%d\n got: %q\n %q", i, s, test.expected)
+	for i, tt := range tests {
+		s := cfg.Sdump(tt.val)
+		if s != tt.expected {
+			t.Errorf("Dump #%d\n got: %q\n %q", i, s, tt.expected)
 		}
 	}
 }
 
 func TestDumpSortedKeys(t *testing.T) {
-	cfg := utter.ConfigState{SortKeys: true}
+	cfg := dumper.ConfigState{SortKeys: true}
 	tests := []struct {
-		m        interface{}
+		m        any
 		expected string
 	}{
 		{
@@ -953,11 +953,11 @@ float64(1): int(3),
 		},
 	}
 
-	for _, test := range tests {
-		got := cfg.Sdump(test.m)
+	for _, tt := range tests {
+		got := cfg.Sdump(tt.m)
 
-		if got != test.expected {
-			t.Errorf("Sorted keys mismatch:\n  %v %v", got, test.expected)
+		if got != tt.expected {
+			t.Errorf("Sorted keys mismatch:\n  %v %v", got, tt.expected)
 		}
 	}
 }
@@ -984,12 +984,12 @@ func (w *limitedWriter) Write(b []byte) (int, error) {
 }
 
 var sliceElementCycles = []struct {
-	v    interface{}
+	v    any
 	want string
 }{
 	{
-		v: func() interface{} {
-			r := make([]interface{}, 1)
+		v: func() any {
+			r := make([]any, 1)
 			r[0] = r
 			return r
 		}(),
@@ -1002,8 +1002,8 @@ var sliceElementCycles = []struct {
 `,
 	},
 	{
-		v: func() interface{} {
-			r := make([]interface{}, 1)
+		v: func() any {
+			r := make([]any, 1)
 			r[0] = r
 			return &r
 		}(),
@@ -1013,8 +1013,8 @@ var sliceElementCycles = []struct {
 `,
 	},
 	{
-		v: func() interface{} {
-			r := make([]interface{}, 1)
+		v: func() any {
+			r := make([]any, 1)
 			r[0] = &r
 			return &r
 		}(),
@@ -1024,20 +1024,20 @@ var sliceElementCycles = []struct {
 `,
 	},
 	{
-		v: func() interface{} {
+		v: func() any {
 			type recurrence struct {
-				v []interface{}
+				v []any
 			}
-			r := recurrence{make([]interface{}, 1)}
+			r := recurrence{make([]any, 1)}
 			r.v[0] = r
 			return r
 		}(),
 		// We cannot detect the cycle until at least once around
 		// the cycle as the initial v seen by utter.Dump was not
 		// addressable.
-		want: `utter_test.recurrence{
+		want: `dumper_test.recurrence{
  v: []interface{}{
-  utter_test.recurrence{
+  dumper_test.recurrence{
    v: []interface{}(<already shown>),
   },
  },
@@ -1045,17 +1045,17 @@ var sliceElementCycles = []struct {
 `,
 	},
 	{
-		v: func() interface{} {
+		v: func() any {
 			type recurrence struct {
-				v []interface{}
+				v []any
 			}
-			r := recurrence{make([]interface{}, 1)}
+			r := recurrence{make([]any, 1)}
 			r.v[0] = r
 			return &r
 		}(),
-		want: `&utter_test.recurrence{
+		want: `&dumper_test.recurrence{
  v: []interface{}{
-  utter_test.recurrence{
+  dumper_test.recurrence{
    v: []interface{}(<already shown>),
   },
  },
@@ -1063,13 +1063,13 @@ var sliceElementCycles = []struct {
 `,
 	},
 	{
-		v: func() interface{} {
+		v: func() any {
 			type container struct {
 				v []int
 			}
 			return &container{[]int{1}}
 		}(),
-		want: `&utter_test.container{
+		want: `&dumper_test.container{
  v: []int{
   int(1),
  },
@@ -1080,7 +1080,7 @@ var sliceElementCycles = []struct {
 
 // https://github.com/zchee/dumper/issues/5
 func TestIssue5Slices(t *testing.T) {
-	for _, test := range sliceElementCycles {
+	for _, tt := range sliceElementCycles {
 		w := newLimitedWriter(512)
 		func() {
 			defer func() {
@@ -1089,22 +1089,22 @@ func TestIssue5Slices(t *testing.T) {
 					t.Errorf("limited writer panicked: probable cycle: %v", r)
 				}
 			}()
-			utter.Fdump(w, test.v)
+			dumper.Fdump(w, tt.v)
 			got := w.buf.String()
-			if got != test.want {
-				t.Errorf("unexpected value:\ngot:\n%swant:\n%s", got, test.want)
+			if got != tt.want {
+				t.Errorf("unexpected value:\ngot:\n%swant:\n%s", got, tt.want)
 			}
 		}()
 	}
 }
 
 var mapElementCycles = []struct {
-	v    interface{}
+	v    any
 	want string
 }{
 	{
-		v: func() interface{} {
-			r := make(map[int]interface{}, 1)
+		v: func() any {
+			r := make(map[int]any, 1)
 			r[0] = r
 			return r
 		}(),
@@ -1114,8 +1114,8 @@ var mapElementCycles = []struct {
 `,
 	},
 	{
-		v: func() interface{} {
-			r := make(map[int]interface{}, 1)
+		v: func() any {
+			r := make(map[int]any, 1)
 			r[0] = r
 			return &r
 		}(),
@@ -1125,8 +1125,8 @@ var mapElementCycles = []struct {
 `,
 	},
 	{
-		v: func() interface{} {
-			r := make(map[int]interface{}, 1)
+		v: func() any {
+			r := make(map[int]any, 1)
 			r[0] = &r
 			return &r
 		}(),
@@ -1136,17 +1136,17 @@ var mapElementCycles = []struct {
 `,
 	},
 	{
-		v: func() interface{} {
+		v: func() any {
 			type recurrence struct {
-				v map[int]interface{}
+				v map[int]any
 			}
-			r := recurrence{make(map[int]interface{}, 1)}
+			r := recurrence{make(map[int]any, 1)}
 			r.v[0] = r
 			return r
 		}(),
-		want: `utter_test.recurrence{
+		want: `dumper_test.recurrence{
  v: map[int]interface{}{
-  int(0): utter_test.recurrence{
+  int(0): dumper_test.recurrence{
    v: map[int]interface{}(<already shown>),
   },
  },
@@ -1154,17 +1154,17 @@ var mapElementCycles = []struct {
 `,
 	},
 	{
-		v: func() interface{} {
+		v: func() any {
 			type recurrence struct {
-				v map[int]interface{}
+				v map[int]any
 			}
-			r := recurrence{make(map[int]interface{}, 1)}
+			r := recurrence{make(map[int]any, 1)}
 			r.v[0] = r
 			return &r
 		}(),
-		want: `&utter_test.recurrence{
+		want: `&dumper_test.recurrence{
  v: map[int]interface{}{
-  int(0): utter_test.recurrence{
+  int(0): dumper_test.recurrence{
    v: map[int]interface{}(<already shown>),
   },
  },
@@ -1175,10 +1175,10 @@ var mapElementCycles = []struct {
 	// is not overly zealous by missing identifying the address of slices.
 	// This is https://github.com/zchee/dumper/issues/12.
 	{
-		v: map[interface{}][]interface{}{
-			"outer": []interface{}{
-				map[interface{}]interface{}{
-					"inner": []interface{}{"value"},
+		v: map[any][]any{
+			"outer": {
+				map[any]any{
+					"inner": []any{"value"},
 				},
 			},
 		},
@@ -1198,7 +1198,7 @@ var mapElementCycles = []struct {
 // https://github.com/zchee/dumper/issues/5
 // https://github.com/zchee/dumper/issues/12
 func TestIssue5Maps(t *testing.T) {
-	for _, test := range mapElementCycles {
+	for _, tt := range mapElementCycles {
 		w := newLimitedWriter(512)
 		func() {
 			defer func() {
@@ -1207,10 +1207,10 @@ func TestIssue5Maps(t *testing.T) {
 					t.Errorf("limited writer panicked: probable cycle: %v", r)
 				}
 			}()
-			utter.Fdump(w, test.v)
+			dumper.Fdump(w, tt.v)
 			got := w.buf.String()
-			if got != test.want {
-				t.Errorf("unexpected value:\ngot:\n%swant:\n%s", got, test.want)
+			if got != tt.want {
+				t.Errorf("unexpected value:\ngot:\n%swant:\n%s", got, tt.want)
 			}
 		}()
 	}

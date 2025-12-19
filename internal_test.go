@@ -28,6 +28,8 @@ import (
 	"reflect"
 	"testing"
 	"unsafe"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 // dummyFmtState implements a fake fmt.State to use for testing invalid
@@ -73,7 +75,7 @@ func TestInvalidReflectValue(t *testing.T) {
 // fallback code which punts to the standard fmt library for new types that
 // might get added to the language.
 func changeKind(v *reflect.Value, readOnly bool) {
-	rvf := (*uintptr)(unsafe.Pointer(uintptr(unsafe.Pointer(v)) + offsetFlag))
+	rvf := (*uintptr)(unsafe.Add(unsafe.Pointer(v), offsetFlag))
 	*rvf = *rvf | ((1<<flagKindWidth - 1) << flagKindShift)
 	if readOnly {
 		*rvf |= flagRO
@@ -109,6 +111,109 @@ func TestAddedReflectValue(t *testing.T) {
 	want = "int8(<int8 Value>)"
 	if s != want {
 		t.Errorf("TestAddedReflectValue #%d\n got: %s want: %s", i, s, want)
+	}
+}
+
+func TestDumpStateIndentBytes(t *testing.T) {
+	tests := map[string]struct {
+		indent string
+		depths []int
+		wants  []string
+	}{
+		"success: empty indent": {
+			indent: "",
+			depths: []int{0, 1, 3},
+			wants:  []string{"", "", ""},
+		},
+		"success: spaces": {
+			indent: " ",
+			depths: []int{0, 1, 3},
+			wants:  []string{"", " ", "   "},
+		},
+		"success: tabs": {
+			indent: "\t",
+			depths: []int{2},
+			wants:  []string{"\t\t"},
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			state := dumpState{cs: &ConfigState{Indent: test.indent}}
+			got := make([]string, 0, len(test.depths))
+			for _, depth := range test.depths {
+				got = append(got, string(state.indentBytes(depth)))
+			}
+			if diff := cmp.Diff(test.wants, got); diff != "" {
+				t.Errorf("unexpected indent bytes (-want +got):\n%s", diff)
+			}
+		})
+	}
+}
+
+func TestDumpStateTypeBytes(t *testing.T) {
+	type localType struct{}
+
+	tests := map[string]struct {
+		local string
+		typ   reflect.Type
+		want  string
+	}{
+		"success: interface type": {
+			local: "",
+			typ:   reflect.TypeFor[any](),
+			want:  "interface{}",
+		},
+		"success: local package trimming": {
+			local: "dumper",
+			typ:   reflect.TypeFor[localType](),
+			want:  "localType",
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			state := dumpState{cs: &ConfigState{LocalPackage: test.local}}
+			got := string(state.typeBytes(test.typ))
+			if diff := cmp.Diff(test.want, got); diff != "" {
+				t.Errorf("unexpected type bytes (-want +got):\n%s", diff)
+			}
+		})
+	}
+}
+
+func TestWriteBufferedChanInfo(t *testing.T) {
+	tests := map[string]struct {
+		capacity int
+		length   int
+		want     string
+	}{
+		"success: empty buffer": {
+			capacity: 1,
+			length:   0,
+			want:     ", 1",
+		},
+		"success: single element": {
+			capacity: 2,
+			length:   1,
+			want:     ", 2 /* 1 element */",
+		},
+		"success: multiple elements": {
+			capacity: 2,
+			length:   2,
+			want:     ", 2 /* 2 elements */",
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			var buf bytes.Buffer
+			writeBufferedChanInfo(&buf, test.capacity, test.length)
+			got := buf.String()
+			if diff := cmp.Diff(test.want, got); diff != "" {
+				t.Errorf("unexpected buffered chan info (-want +got):\n%s", diff)
+			}
+		})
 	}
 }
 
