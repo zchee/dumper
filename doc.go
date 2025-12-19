@@ -22,28 +22,29 @@ data snapshotting.
 A quick overview of the additional features utter provides over the built-in
 printing facilities for Go data types are as follows:
 
-	* Pointers are dereferenced and followed
-	* Circular data structures are detected and annotated
-	* Byte arrays and slices are dumped in a way similar to the hexdump -C command
-	  which includes byte values in hex, and ASCII output
+  - Pointers are dereferenced and followed
+  - Circular data structures are detected and annotated
+  - Byte arrays and slices are dumped in a way similar to the hexdump -C command
+    which includes byte values in hex, and ASCII output
 
 The approach utter allows for dumping Go data structures is less flexible than
 its parent tool. It has just a:
 
-	* Dump style which prints with newlines and customizable indentation
+  - Dump style which prints with newlines and customizable indentation
 
-Quick Start
+# Quick Start
 
 This section demonstrates how to quickly get started with utter. See the
 sections below for further details on formatting and configuration options.
 
 To dump a variable with full newlines, indentation, type, and pointer
 information use Dump, Fdump, or Sdump:
+
 	utter.Dump(myVar1)
 	utter.Fdump(someWriter, myVar1)
 	str := utter.Sdump(myVar1)
 
-Configuration Options
+# Configuration Options
 
 Configuration of utter is handled by fields in the ConfigState type.  For
 convenience, all of the top-level functions use a global state available
@@ -54,46 +55,47 @@ equivalent to the top-level functions.  This allows concurrent configuration
 options.  See the ConfigState documentation for more details.
 
 The following configuration options are available:
-	* Indent
-		String to use for each indentation level for Dump functions.
-		It is a single space by default. A popular alternative is "\t".
 
-	* NumericWidth
-		NumericWidth specifies the number of columns to use when dumping
-		a numeric slice or array (including bool). Zero specifies all entries
-		on one line.
+  - Indent
+    String to use for each indentation level for Dump functions.
+    It is a single space by default. A popular alternative is "\t".
 
-	* StringWidth
-		StringWidth specifies the number of columns to use when dumping
-		a string slice or array. Zero specifies all entries on one line.
+  - NumericWidth
+    NumericWidth specifies the number of columns to use when dumping
+    a numeric slice or array (including bool). Zero specifies all entries
+    on one line.
 
-	* BytesWidth
-		Number of byte columns to use when dumping byte slices and arrays.
+  - StringWidth
+    StringWidth specifies the number of columns to use when dumping
+    a string slice or array. Zero specifies all entries on one line.
 
-	* CommentBytes
-		Specifies whether ASCII comment annotations are attached to byte
-		slice and array dumps.
+  - BytesWidth
+    Number of byte columns to use when dumping byte slices and arrays.
 
-	* CommentPointers
-		CommentPointers specifies whether pointer information will be added
-		as comments.
+  - CommentBytes
+    Specifies whether ASCII comment annotations are attached to byte
+    slice and array dumps.
 
-	* IgnoreUnexported
-		Specifies that unexported fields should be ignored.
+  - CommentPointers
+    CommentPointers specifies whether pointer information will be added
+    as comments.
 
-	* ElideType
-		ElideType specifies that type information defined by context should
-		not be printed in a dump.
+  - IgnoreUnexported
+    Specifies that unexported fields should be ignored.
 
-	* SortKeys
-		Specifies map keys should be sorted before being printed. Use
-		this to have a more deterministic, diffable output.  Note that
-		only native types (bool, int, uint, floats, uintptr and string)
-		are supported with other types sorted according to the
-		reflect.Value.String() output which guarantees display stability.
-		Natural map order is used by default.
+  - ElideType
+    ElideType specifies that type information defined by context should
+    not be printed in a dump.
 
-Dump Usage
+  - SortKeys
+    Specifies map keys should be sorted before being printed. Use
+    this to have a more deterministic, diffable output.  Note that
+    only native types (bool, int, uint, floats, uintptr and string)
+    are supported with other types sorted according to the
+    reflect.Value.String() output which guarantees display stability.
+    Natural map order is used by default.
+
+# Dump Usage
 
 Simply call utter.Dump with a list of variables you want to dump:
 
@@ -108,7 +110,7 @@ A third option is to call utter.Sdump to get the formatted output as a string:
 
 	str := utter.Sdump(myVar1)
 
-Sample Dump Output
+# Sample Dump Output
 
 See the Dump example for details on the setup of the types and variables being
 shown here.
