@@ -1,7 +1,7 @@
 utter
 =====
 
-[![Build status](https://github.com/kortschak/utter/workflows/Test/badge.svg)](https://github.com/kortschak/utter/actions)
+[![Build status](https://github.com/zchee/dumper/workflows/Test/badge.svg)](https://github.com/zchee/dumper/actions)
  [![Coverage Status](https://coveralls.io/repos/kortschak/utter/badge.svg?branch=master)](https://coveralls.io/r/kortschak/utter?branch=master)
 
 utter is a fork of the outstanding [go-spew tool](https://github.com/davecgh/go-spew).
@@ -17,20 +17,20 @@ be used in open source or commercial projects.
 
 ## Documentation
 
-[![GoDoc](https://godoc.org/github.com/kortschak/utter?status.svg)](http://godoc.org/github.com/kortschak/utter)
+[![GoDoc](https://godoc.org/github.com/zchee/dumper?status.svg)](http://godoc.org/github.com/zchee/dumper)
 
 Full `go doc` style documentation for the project can be viewed online without
 installing this package by using the excellent GoDoc site here:
-http://godoc.org/github.com/kortschak/utter
+http://godoc.org/github.com/zchee/dumper
 
 You can also view the documentation locally once the package is installed with
 the `godoc` tool by running `godoc -http=":6060"` and pointing your browser to
-http://localhost:6060/pkg/github.com/kortschak/utter
+http://localhost:6060/pkg/github.com/zchee/dumper
 
 ## Installation
 
 ```bash
-$ go get -u github.com/kortschak/utter
+$ go get -u github.com/zchee/dumper
 ```
 
 ## Quick Start

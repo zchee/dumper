@@ -21,7 +21,7 @@ package because it needs access to internals to properly test certain cases
 which are not possible via the public interface since they should never happen.
 */
 
-package utter
+package dumper
 
 import (
 	"bytes"

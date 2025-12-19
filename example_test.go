@@ -15,12 +15,12 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-package utter_test
+package dumper_test
 
 import (
 	"fmt"
 
-	"github.com/kortschak/utter"
+	"github.com/zchee/dumper"
 )
 
 type Flag int

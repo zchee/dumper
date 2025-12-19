@@ -15,14 +15,14 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-package utter_test
+package dumper_test
 
 import (
 	"fmt"
 	"reflect"
 	"testing"
 
-	"github.com/kortschak/utter"
+	"github.com/zchee/dumper"
 )
 
 // custom type to test Stinger interface on non-pointer receiver.

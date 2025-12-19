@@ -22,9 +22,9 @@
 // C compiler just to run the tests, this scheme makes them optional.
 // +build cgo,testcgo
 
-package utter_test
+package dumper_test
 
-import "github.com/kortschak/utter/testdata"
+import "github.com/zchee/dumper/testdata"
 
 func addCgoDumpTests() {
 	// C char pointer.

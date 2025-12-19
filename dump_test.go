@@ -60,7 +60,7 @@ base test element are also tested to ensure proper indirection across all types.
 - Type that panics in its Stringer interface
 */
 
-package utter_test
+package dumper_test
 
 import (
 	"bytes"
@@ -69,7 +69,7 @@ import (
 	"testing"
 	"unsafe"
 
-	"github.com/kortschak/utter"
+	"github.com/zchee/dumper"
 )
 
 // dumpTest is used to describe a test to be perfomed against the Dump method.
@@ -1078,7 +1078,7 @@ var sliceElementCycles = []struct {
 	},
 }
 
-// https://github.com/kortschak/utter/issues/5
+// https://github.com/zchee/dumper/issues/5
 func TestIssue5Slices(t *testing.T) {
 	for _, test := range sliceElementCycles {
 		w := newLimitedWriter(512)
@@ -1173,7 +1173,7 @@ var mapElementCycles = []struct {
 	},
 	// The following test is to confirm that the recursion detection
 	// is not overly zealous by missing identifying the address of slices.
-	// This is https://github.com/kortschak/utter/issues/12.
+	// This is https://github.com/zchee/dumper/issues/12.
 	{
 		v: map[interface{}][]interface{}{
 			"outer": []interface{}{
@@ -1195,8 +1195,8 @@ var mapElementCycles = []struct {
 	},
 }
 
-// https://github.com/kortschak/utter/issues/5
-// https://github.com/kortschak/utter/issues/12
+// https://github.com/zchee/dumper/issues/5
+// https://github.com/zchee/dumper/issues/12
 func TestIssue5Maps(t *testing.T) {
 	for _, test := range mapElementCycles {
 		w := newLimitedWriter(512)

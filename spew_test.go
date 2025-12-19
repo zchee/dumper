@@ -15,14 +15,14 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-package utter_test
+package dumper_test
 
 import (
 	"bytes"
 	"fmt"
 	"testing"
 
-	"github.com/kortschak/utter"
+	"github.com/zchee/dumper"
 )
 
 // utterFunc is used to identify which public function of the utter package or

@@ -18,7 +18,7 @@
 // this scenario.
 // +build !cgo !testcgo
 
-package utter_test
+package dumper_test
 
 func addCgoDumpTests() {
 	// Don't add any tests for cgo since this file is only compiled when
