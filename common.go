@@ -85,7 +85,7 @@ func init() {
 	// field and ensures it's the correct type.  When it's not, the flag
 	// order has been changed to the newer format, so the flags are updated
 	// accordingly.
-	upf := unsafe.Pointer(uintptr(unsafe.Pointer(&vv)) + offsetFlag)
+	upf := unsafe.Add(unsafe.Pointer(&vv), offsetFlag)
 	upfv := *(*uintptr)(upf)
 	flagKindMask := uintptr((1<<flagKindWidth - 1) << flagKindShift)
 	if (upfv&flagKindMask)>>flagKindShift != uintptr(reflect.Int) {
@@ -108,6 +108,14 @@ func init() {
 			flagIndir = 1 << 7
 		}
 	}
+
+	for i := range hexByteTable {
+		hexByteTable[i][0] = '0'
+		hexByteTable[i][1] = 'x'
+		hexByteTable[i][2] = hexDigits[i>>4]
+		hexByteTable[i][3] = hexDigits[i&0x0f]
+		hexByteTable[i][4] = ','
+	}
 }
 
 // unsafeReflectValue converts the passed reflect.Value into a one that bypasses
@@ -122,8 +130,8 @@ func init() {
 func unsafeReflectValue(v reflect.Value) (rv reflect.Value) {
 	indirects := 1
 	vt := v.Type()
-	upv := unsafe.Pointer(uintptr(unsafe.Pointer(&v)) + offsetPtr)
-	rvf := *(*uintptr)(unsafe.Pointer(uintptr(unsafe.Pointer(&v)) + offsetFlag))
+	upv := unsafe.Add(unsafe.Pointer(&v), offsetPtr)
+	rvf := *(*uintptr)(unsafe.Add(unsafe.Pointer(&v), offsetFlag))
 	if rvf&flagIndir != 0 {
 		vt = reflect.PtrTo(v.Type())
 		indirects++
@@ -135,11 +143,10 @@ func unsafeReflectValue(v reflect.Value) (rv reflect.Value) {
 		case reflect.Chan:
 		case reflect.Func:
 		case reflect.Map:
-		case reflect.Ptr:
+		case reflect.Pointer:
 		case reflect.UnsafePointer:
 		default:
-			upv = unsafe.Pointer(uintptr(unsafe.Pointer(&v)) +
-				offsetScalar)
+			upv = unsafe.Add(unsafe.Pointer(&v), offsetScalar)
 		}
 	}
 
@@ -182,10 +189,14 @@ var (
 	pointerChainBytes     = []byte("->")
 	circularBytes         = []byte("(<already shown>)")
 	invalidAngleBytes     = []byte("<invalid>")
+	commentPrefixBytes    = []byte(" // |")
+	commentSuffixBytes    = []byte("|\n")
 )
 
 // hexDigits is used to map a decimal value to a hex digit.
 var hexDigits = "0123456789abcdef"
+
+var hexByteTable [256][5]byte
 
 // printBool outputs a boolean value as true or false to Writer w.
 func printBool(w io.Writer, val bool) {
@@ -198,39 +209,45 @@ func printBool(w io.Writer, val bool) {
 
 // printInt outputs a signed integer value to Writer w.
 func printInt(w io.Writer, val int64, base int) {
-	w.Write([]byte(strconv.FormatInt(val, base)))
+	var buf [64]byte
+	formatted := strconv.AppendInt(buf[:0], val, base)
+	w.Write(formatted)
 }
 
 // printUint outputs an unsigned integer value to Writer w.
 func printUint(w io.Writer, val uint64, base int) {
-	w.Write([]byte(strconv.FormatUint(val, base)))
+	var buf [64]byte
+	formatted := strconv.AppendUint(buf[:0], val, base)
+	w.Write(formatted)
 }
 
 // printFloat outputs a floating point value using the specified precision,
 // which is expected to be 32 or 64bit, to Writer w.
 func printFloat(w io.Writer, val float64, precision int, typeElided bool) {
-	w.Write([]byte(strconv.FormatFloat(val, 'g', -1, precision)))
+	var buf [64]byte
+	formatted := strconv.AppendFloat(buf[:0], val, 'g', -1, precision)
 	if typeElided && !math.IsInf(val, 0) && val == math.Floor(val) {
-		w.Write(pointZeroBytes)
+		formatted = append(formatted, '.', '0')
 	}
+	w.Write(formatted)
 }
 
 // printComplex outputs a complex value using the specified float precision
 // for the real and imaginary parts to Writer w.
 func printComplex(w io.Writer, c complex128, floatPrecision int) {
-	r := real(c)
-	w.Write([]byte(strconv.FormatFloat(r, 'g', -1, floatPrecision)))
-	i := imag(c)
-	if i >= 0 {
-		w.Write(plusBytes)
+	var buf [128]byte
+	formatted := strconv.AppendFloat(buf[:0], real(c), 'g', -1, floatPrecision)
+	if imag(c) >= 0 {
+		formatted = append(formatted, '+')
 	}
-	w.Write([]byte(strconv.FormatFloat(i, 'g', -1, floatPrecision)))
-	w.Write(iBytes)
+	formatted = strconv.AppendFloat(formatted, imag(c), 'g', -1, floatPrecision)
+	formatted = append(formatted, 'i')
+	w.Write(formatted)
 }
 
 // hexDump is a modified 'hexdump -C'-like that returns a commented Go syntax
 // byte slice or array.
-func hexDump(w io.Writer, data []byte, indent string, width int, comment, addr bool) {
+func hexDump(w io.Writer, data []byte, indent []byte, width int, comment, addr bool) {
 	if width <= 0 {
 		width = 16 // This is the width used by hexdump -C, so it makes a reasonable default.
 	}
@@ -240,21 +257,36 @@ func hexDump(w io.Writer, data []byte, indent string, width int, comment, addr b
 		commentBytes = make([]byte, width)
 	}
 
-	var addrFmt string
+	addrWidth := 0
 	if addr {
-		addrFmt = fmt.Sprintf("%%#0%dx: ", (bits.Len(uint(len(data)))+3)/4)
+		addrWidth = (bits.Len(uint(len(data))) + 3) / 4
+		if addrWidth == 0 {
+			addrWidth = 1
+		}
 	}
+	var addrBuf [32]byte
+	var addrDigitsBuf [32]byte
 	for i, v := range data {
 		if i%width == 0 {
-			fmt.Fprint(w, indent)
+			w.Write(indent)
 			if addr {
-				fmt.Fprintf(w, addrFmt, i)
+				buf := addrBuf[:0]
+				buf = append(buf, '0', 'x')
+				digits := strconv.AppendUint(addrDigitsBuf[:0], uint64(i), 16)
+				if pad := addrWidth - len(digits); pad > 0 {
+					for range pad {
+						buf = append(buf, '0')
+					}
+				}
+				buf = append(buf, digits...)
+				buf = append(buf, ':', ' ')
+				w.Write(buf)
 			}
 		} else {
 			w.Write(spaceBytes)
 		}
 
-		fmt.Fprintf(w, "%#02x,", v)
+		w.Write(hexByteTable[v][:])
 		if comment {
 			if v < 32 || v > 126 {
 				v = '.'
@@ -264,12 +296,14 @@ func hexDump(w io.Writer, data []byte, indent string, width int, comment, addr b
 
 		if !comment {
 			if i%width == width-1 || i == len(data)-1 {
-				fmt.Fprintln(w)
+				w.Write(newlineBytes)
 			}
 			continue
 		}
 		if i%width == width-1 {
-			fmt.Fprintf(w, " // |%s|\n", commentBytes[:])
+			w.Write(commentPrefixBytes)
+			w.Write(commentBytes[:])
+			w.Write(commentSuffixBytes)
 		} else if i == len(data)-1 {
 			if len(data) > width {
 				slots := width - i%width - 1
@@ -277,14 +311,16 @@ func hexDump(w io.Writer, data []byte, indent string, width int, comment, addr b
 				case 0:
 					// Do nothing.
 				case 1:
-					w.Write([]byte(" /* */"))
+					io.WriteString(w, " /* */")
 				default:
-					w.Write([]byte(" /*   "))
+					io.WriteString(w, " /*   ")
 					w.Write(bytes.Repeat([]byte("      "), slots-2))
-					w.Write([]byte("    */"))
+					io.WriteString(w, "    */")
 				}
 			}
-			fmt.Fprintf(w, " // |%s|\n", commentBytes[:len(data)%width])
+			w.Write(commentPrefixBytes)
+			w.Write(commentBytes[:len(data)%width])
+			w.Write(commentSuffixBytes)
 		}
 	}
 }
@@ -303,8 +339,8 @@ func printHexPtr(w io.Writer, p uintptr, isPointer bool) {
 		return
 	}
 
-	// Max uint64 is 16 bytes in hex + 2 bytes for '0x' prefix
-	buf := make([]byte, 18)
+	// Max uint64 is 16 bytes in hex + 2 bytes for '0x' prefix.
+	var buf [18]byte
 
 	// It's simpler to construct the hex string right to left.
 	base := uint64(16)
@@ -323,8 +359,7 @@ func printHexPtr(w io.Writer, p uintptr, isPointer bool) {
 	buf[i] = '0'
 
 	// Strip unused leading bytes.
-	buf = buf[i:]
-	w.Write(buf)
+	w.Write(buf[i:])
 }
 
 // mapSorter implements sort.Interface to allow a slice of reflect.Value
@@ -369,7 +404,7 @@ func less(kA, kB, vA, vB reflect.Value) bool {
 	case reflect.Array:
 		// Compare the contents of both arrays.
 		l := kA.Len()
-		for i := 0; i < l; i++ {
+		for i := range l {
 			av := kA.Index(i)
 			bv := kB.Index(i)
 			if av.Interface() == bv.Interface() {

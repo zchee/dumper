@@ -30,7 +30,7 @@ func (d *dumpState) walkPtr(v reflect.Value) {
 	}
 
 	var nilFound, cycleFound bool
-	for v.Kind() == reflect.Ptr {
+	for v.Kind() == reflect.Pointer {
 		if v.IsNil() {
 			nilFound = true
 			break
@@ -81,7 +81,7 @@ func (d *dumpState) walk(v reflect.Value, _, _, _ bool, _ uintptr) {
 	}
 
 	// Handle pointers specially.
-	if kind == reflect.Ptr {
+	if kind == reflect.Pointer {
 		d.walkPtr(v)
 		return
 	}

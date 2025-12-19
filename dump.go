@@ -33,7 +33,7 @@ import (
 var (
 	// uint8Type is a reflect.Type representing a uint8.  It is used to
 	// convert cgo types to uint8 slices for hexdumping.
-	uint8Type = reflect.TypeOf(uint8(0))
+	uint8Type = reflect.TypeFor[uint8]()
 
 	// cCharRE is a regular expression that matches a cgo char.
 	// It is used to detect character arrays to hexdump them.
@@ -64,6 +64,9 @@ type dumpState struct {
 	ignoreNextType   bool
 	ignoreNextIndent bool
 	cs               *ConfigState
+	indentUnit       []byte
+	indentCache      [][]byte
+	typeCache        map[reflect.Type][]byte
 }
 
 // indent performs indentation according to the depth level and cs.Indent
@@ -73,7 +76,65 @@ func (d *dumpState) indent() {
 		d.ignoreNextIndent = false
 		return
 	}
-	d.w.Write(bytes.Repeat([]byte(d.cs.Indent), d.depth))
+	d.w.Write(d.indentBytes(d.depth))
+}
+
+func (d *dumpState) indentBytes(depth int) []byte {
+	if depth == 0 {
+		return nil
+	}
+	if d.indentUnit == nil {
+		d.indentUnit = []byte(d.cs.Indent)
+	}
+	if len(d.indentUnit) == 0 {
+		return nil
+	}
+	if d.indentCache == nil {
+		d.indentCache = make([][]byte, 1)
+	}
+	for len(d.indentCache) <= depth {
+		prev := d.indentCache[len(d.indentCache)-1]
+		next := make([]byte, len(prev)+len(d.indentUnit))
+		copy(next, prev)
+		copy(next[len(prev):], d.indentUnit)
+		d.indentCache = append(d.indentCache, next)
+	}
+	return d.indentCache[depth]
+}
+
+func (d *dumpState) typeBytes(typ reflect.Type) []byte {
+	if d.typeCache == nil {
+		d.typeCache = make(map[reflect.Type][]byte)
+	}
+	if cached, ok := d.typeCache[typ]; ok {
+		return cached
+	}
+	formatted := typeString(typ, d.cs.LocalPackage)
+	if strings.Contains(formatted, "interface {}") {
+		formatted = strings.ReplaceAll(formatted, "interface {}", "interface{}")
+	}
+	converted := []byte(formatted)
+	d.typeCache[typ] = converted
+	return converted
+}
+
+func writeBufferedChanInfo(w io.Writer, capacity, length int) {
+	w.Write(commaSpaceBytes)
+	printInt(w, int64(capacity), 10)
+	if length == 0 {
+		return
+	}
+	w.Write(openCommentBytes)
+	w.Write(spaceBytes)
+	printInt(w, int64(length), 10)
+	w.Write(spaceBytes)
+	if length == 1 {
+		io.WriteString(w, "element")
+	} else {
+		io.WriteString(w, "elements")
+	}
+	w.Write(spaceBytes)
+	io.WriteString(w, "*/")
 }
 
 // unpackValue returns values inside of non-nil interfaces when possible.
@@ -84,9 +145,9 @@ func (d *dumpState) unpackValue(v reflect.Value) (val reflect.Value, wasPtr, sta
 		addr = v.Addr().Pointer()
 	}
 	if v.Kind() == reflect.Interface && !v.IsNil() {
-		return v.Elem(), v.Kind() == reflect.Ptr, false, false, addr
+		return v.Elem(), v.Kind() == reflect.Pointer, false, false, addr
 	}
-	return v, v.Kind() == reflect.Ptr, true, false, addr
+	return v, v.Kind() == reflect.Pointer, true, false, addr
 }
 
 // dumpPtr handles formatting of pointers by indirecting them as necessary.
@@ -113,7 +174,7 @@ func (d *dumpState) dumpPtr(v reflect.Value) {
 	// references.
 	var nilFound, cycleFound bool
 	indirects := 0
-	for v.Kind() == reflect.Ptr {
+	for v.Kind() == reflect.Pointer {
 		if v.IsNil() {
 			nilFound = true
 			break
@@ -148,32 +209,21 @@ func (d *dumpState) dumpPtr(v reflect.Value) {
 	var typeBytes []byte
 	if displayed {
 		d.w.Write(openParenBytes)
-		typeBytes = []byte(typeString(orig.Type(), d.cs.LocalPackage))
+		typeBytes = d.typeBytes(orig.Type())
 	} else {
 		d.w.Write(bytes.Repeat(ampersandBytes, indirects))
-		typeBytes = []byte(typeString(v.Type(), d.cs.LocalPackage))
+		typeBytes = d.typeBytes(v.Type())
 	}
 	kind := v.Kind()
 	bufferedChan := kind == reflect.Chan && v.Cap() != 0
-	if kind == reflect.Ptr || bufferedChan {
+	if kind == reflect.Pointer || bufferedChan {
 		d.w.Write(openParenBytes)
 	}
-	d.w.Write(bytes.ReplaceAll(typeBytes, interfaceTypeBytes, interfaceBytes))
-	if displayed {
-		d.w.Write(closeParenBytes)
+	d.w.Write(typeBytes)
+	if bufferedChan {
+		writeBufferedChanInfo(d.w, v.Cap(), v.Len())
 	}
-	switch {
-	case bufferedChan:
-		switch len := v.Len(); len {
-		case 0:
-			fmt.Fprintf(d.w, ", %d", v.Cap())
-		case 1:
-			fmt.Fprintf(d.w, ", %d /* %d element */", v.Cap(), len)
-		default:
-			fmt.Fprintf(d.w, ", %d /* %d elements */", v.Cap(), len)
-		}
-		fallthrough
-	case kind == reflect.Ptr:
+	if displayed || bufferedChan || kind == reflect.Pointer {
 		d.w.Write(closeParenBytes)
 	}
 
@@ -274,7 +324,7 @@ func (d *dumpState) dumpSlice(v reflect.Value, canElideCompound bool) {
 			// Convert and copy each element into a uint8 byte
 			// slice.
 			buf = make([]uint8, numEntries)
-			for i := 0; i < numEntries; i++ {
+			for i := range numEntries {
 				vv := v.Index(i)
 				buf[i] = uint8(vv.Convert(uint8Type).Uint())
 			}
@@ -299,13 +349,13 @@ func (d *dumpState) dumpSlice(v reflect.Value, canElideCompound bool) {
 
 	// Hexdump the entire slice as needed.
 	if doHexDump {
-		indent := strings.Repeat(d.cs.Indent, d.depth)
+		indent := d.indentBytes(d.depth)
 		hexDump(d.w, buf, indent, d.cs.BytesWidth, d.cs.CommentBytes, d.cs.AddressBytes)
 		return
 	}
 
 	// Recursively call dump for each item.
-	for i := 0; i < numEntries; i++ {
+	for i := range numEntries {
 		vi := v.Index(i)
 		if nPeriod == 0 || i%nPeriod != 0 {
 			d.ignoreNextIndent = true
@@ -353,7 +403,7 @@ func (d *dumpState) dump(v reflect.Value, wasPtr, static, canElideCompound bool,
 	}
 
 	// Handle pointers specially.
-	if kind == reflect.Ptr {
+	if kind == reflect.Pointer {
 		d.indent()
 		d.dumpPtr(v)
 		return
@@ -378,17 +428,11 @@ func (d *dumpState) dump(v reflect.Value, wasPtr, static, canElideCompound bool,
 			if bufferedChan {
 				d.w.Write(openParenBytes)
 			}
-			typeBytes := []byte(typeString(v.Type(), d.cs.LocalPackage))
-			d.w.Write(bytes.ReplaceAll(typeBytes, interfaceTypeBytes, interfaceBytes))
+			typeBytes := d.typeBytes(v.Type())
+			d.w.Write(typeBytes)
 			if bufferedChan {
-				switch len := v.Len(); len {
-				case 0:
-					fmt.Fprintf(d.w, ", %d)", v.Cap())
-				case 1:
-					fmt.Fprintf(d.w, ", %d /* %d element */)", v.Cap(), len)
-				default:
-					fmt.Fprintf(d.w, ", %d /* %d elements */)", v.Cap(), len)
-				}
+				writeBufferedChanInfo(d.w, v.Cap(), v.Len())
+				d.w.Write(closeParenBytes)
 			}
 		}
 	}
@@ -474,7 +518,7 @@ func (d *dumpState) dump(v reflect.Value, wasPtr, static, canElideCompound bool,
 			d.w.Write(nilBytes)
 		}
 
-	case reflect.Ptr:
+	case reflect.Pointer:
 		// We should never get here since pointers have already been handled above.
 		panic("cannot reach")
 
@@ -542,7 +586,7 @@ func (d *dumpState) dump(v reflect.Value, wasPtr, static, canElideCompound bool,
 		d.depth++
 		vt := v.Type()
 		numFields := v.NumField()
-		for i := 0; i < numFields; i++ {
+		for i := range numFields {
 			vtf := vt.Field(i)
 			if d.cs.IgnoreUnexported && vtf.PkgPath != "" {
 				continue
@@ -593,18 +637,18 @@ func (d *dumpState) writeQuoted(s string) {
 	default:
 		fallthrough
 	case DoubleQuote:
-		d.w.Write([]byte(strconv.Quote(s)))
+		io.WriteString(d.w, strconv.Quote(s))
 
 	case AvoidEscapes:
 		if !needsEscape(s) || !canBackquoteString(s) {
-			d.w.Write([]byte(strconv.Quote(s)))
+			io.WriteString(d.w, strconv.Quote(s))
 			return
 		}
 		d.backQuote(s)
 
 	case AvoidEscapes | Force:
 		if !needsEscape(s) {
-			d.w.Write([]byte(strconv.Quote(s)))
+			io.WriteString(d.w, strconv.Quote(s))
 			return
 		}
 
@@ -627,7 +671,7 @@ func (d *dumpState) writeQuoted(s string) {
 						d.backQuote(s[last:i])
 					}
 				} else {
-					d.w.Write([]byte(strconv.Quote(s[last:i])))
+					io.WriteString(d.w, strconv.Quote(s[last:i]))
 				}
 				last = i
 				inBackquote = !inBackquote
@@ -638,7 +682,7 @@ func (d *dumpState) writeQuoted(s string) {
 				d.w.Write(plusBytes)
 			}
 			if !inBackquote {
-				d.w.Write([]byte(strconv.Quote(s[last:])))
+				io.WriteString(d.w, strconv.Quote(s[last:]))
 				return
 			}
 			d.backQuote(s[last:])
@@ -649,7 +693,7 @@ func (d *dumpState) writeQuoted(s string) {
 // backQuote writes s backquoted.
 func (d *dumpState) backQuote(s string) {
 	d.w.Write(backQuoteBytes)
-	d.w.Write([]byte(s))
+	io.WriteString(d.w, s)
 	d.w.Write(backQuoteBytes)
 }
 
@@ -697,7 +741,7 @@ func typeString(typ reflect.Type, local string) string {
 		return strings.TrimPrefix(strings.TrimPrefix(typ.String(), local), ".")
 	}
 	switch typ.Kind() {
-	case reflect.Ptr:
+	case reflect.Pointer:
 		return "*" + strings.TrimPrefix(strings.TrimPrefix(strings.TrimPrefix(typ.String(), "*"), local), ".")
 	case reflect.Array:
 		return fmt.Sprintf("[%d]%s", typ.Len(), typeString(typ.Elem(), local))
@@ -738,7 +782,7 @@ func isZero(v reflect.Value) bool {
 
 // fdump is a helper function to consolidate the logic from the various public
 // methods which take varying writers and config states.
-func fdump(cs *ConfigState, w io.Writer, a interface{}) {
+func fdump(cs *ConfigState, w io.Writer, a any) {
 	if a == nil {
 		w.Write(interfaceBytes)
 		w.Write(openParenBytes)
@@ -766,13 +810,13 @@ func fdump(cs *ConfigState, w io.Writer, a interface{}) {
 
 // Fdump formats and displays the passed arguments to io.Writer w.  It formats
 // exactly the same as Dump.
-func Fdump(w io.Writer, a interface{}) {
+func Fdump(w io.Writer, a any) {
 	fdump(&Config, w, a)
 }
 
 // Sdump returns a string with the passed arguments formatted exactly the same
 // as Dump.
-func Sdump(a interface{}) string {
+func Sdump(a any) string {
 	var buf bytes.Buffer
 	fdump(&Config, &buf, a)
 	return buf.String()
@@ -796,6 +840,6 @@ utter.Config.  See ConfigState for options documentation.
 See Fdump if you would prefer dumping to an arbitrary io.Writer or Sdump to
 get the formatted result as a string.
 */
-func Dump(a interface{}) {
+func Dump(a any) {
 	fdump(&Config, os.Stdout, a)
 }
