@@ -81,7 +81,7 @@ type embedwrap struct {
 	e *embed
 }
 
-// panicer is used to intentionally cause a panic for testing utter properly
+// panicer is used to intentionally cause a panic for testing dumper properly
 // handles them
 type panicer int
 

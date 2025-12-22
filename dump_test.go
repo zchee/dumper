@@ -995,7 +995,7 @@ var sliceElementCycles = []struct {
 			return r
 		}(),
 		// We cannot detect the cycle until at least once around
-		// the cycle as the initial v seen by utter.Dump was not
+		// the cycle as the initial v seen by dumper.Dump was not
 		// addressable.
 		want: `[]interface{}{
  []interface{}(<already shown>),
@@ -1034,7 +1034,7 @@ var sliceElementCycles = []struct {
 			return r
 		}(),
 		// We cannot detect the cycle until at least once around
-		// the cycle as the initial v seen by utter.Dump was not
+		// the cycle as the initial v seen by dumper.Dump was not
 		// addressable.
 		want: `dumper_test.recurrence{
  v: []interface{}{

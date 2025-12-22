@@ -26,41 +26,41 @@ import (
 	"github.com/zchee/dumper"
 )
 
-// utterFunc is used to identify which public function of the utter package or
+// dumperFunc is used to identify which public function of the dumper package or
 // ConfigState a test applies to.
-type utterFunc int
+type dumperFunc int
 
 const (
-	fCSFdump utterFunc = iota
+	fCSFdump dumperFunc = iota
 	fCSSdump
 	fSdump
 )
 
-// Map of utterFunc values to names for pretty printing.
-var utterFuncStrings = map[utterFunc]string{
+// Map of dumperFunc values to names for pretty printing.
+var dumperFuncStrings = map[dumperFunc]string{
 	fCSFdump: "ConfigState.Fdump",
 	fCSSdump: "ConfigState.Sdump",
-	fSdump:   "utter.Sdump",
+	fSdump:   "dumper.Sdump",
 }
 
-func (f utterFunc) String() string {
-	if s, ok := utterFuncStrings[f]; ok {
+func (f dumperFunc) String() string {
+	if s, ok := dumperFuncStrings[f]; ok {
 		return s
 	}
-	return fmt.Sprintf("Unknown utterFunc (%d)", int(f))
+	return fmt.Sprintf("Unknown dumperFunc (%d)", int(f))
 }
 
 // dumperTest is used to describe a test to be performed against the public
-// functions of the utter package or ConfigState.
+// functions of the dumper package or ConfigState.
 type dumperTest struct {
 	cs   *dumper.ConfigState
-	f    utterFunc
+	f    dumperFunc
 	in   any
 	want string
 }
 
 // dumperTests houses the tests to be performed against the public functions of
-// the utter package and ConfigState.
+// the dumper package and ConfigState.
 //
 // These tests are only intended to ensure the public functions are exercised
 // and are intentionally not exhaustive of types.  The exhaustive type
