@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2013 Dave Collins <dave@davec.name>
  * Copyright (c) 2015 Dan Kortschak <dan.kortschak@adelaide.edu.au>
+ * Copyright (c) 2025 Koichi Shiraishi <zchee.io@gmail.com>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -16,10 +17,10 @@
  */
 
 /*
-Package utter implements a deep pretty printer for Go data structures to aid
+Package dumper implements a deep pretty printer for Go data structures to aid
 data snapshotting.
 
-A quick overview of the additional features utter provides over the built-in
+A quick overview of the additional features dumper provides over the built-in
 printing facilities for Go data types are as follows:
 
   - Pointers are dereferenced and followed
@@ -27,28 +28,28 @@ printing facilities for Go data types are as follows:
   - Byte arrays and slices are dumped in a way similar to the hexdump -C command
     which includes byte values in hex, and ASCII output
 
-The approach utter allows for dumping Go data structures is less flexible than
+The approach dumper allows for dumping Go data structures is less flexible than
 its parent tool. It has just a:
 
   - Dump style which prints with newlines and customizable indentation
 
 # Quick Start
 
-This section demonstrates how to quickly get started with utter. See the
+This section demonstrates how to quickly get started with dumper. See the
 sections below for further details on formatting and configuration options.
 
 To dump a variable with full newlines, indentation, type, and pointer
 information use Dump, Fdump, or Sdump:
 
-	utter.Dump(myVar1)
-	utter.Fdump(someWriter, myVar1)
-	str := utter.Sdump(myVar1)
+	dumper.Dump(myVar1)
+	dumper.Fdump(someWriter, myVar1)
+	str := dumper.Sdump(myVar1)
 
 # Configuration Options
 
-Configuration of utter is handled by fields in the ConfigState type.  For
+Configuration of dumper is handled by fields in the ConfigState type.  For
 convenience, all of the top-level functions use a global state available
-via the utter.Config global.
+via the dumper.Config global.
 
 It is also possible to create a ConfigState instance that provides methods
 equivalent to the top-level functions.  This allows concurrent configuration
@@ -97,18 +98,18 @@ The following configuration options are available:
 
 # Dump Usage
 
-Simply call utter.Dump with a list of variables you want to dump:
+Simply call dumper.Dump with a list of variables you want to dump:
 
-	utter.Dump(myVar1)
+	dumper.Dump(myVar1)
 
-You may also call utter.Fdump if you would prefer to output to an arbitrary
+You may also call dumper.Fdump if you would prefer to output to an arbitrary
 io.Writer.  For example, to dump to standard error:
 
-	utter.Fdump(os.Stderr, myVar1)
+	dumper.Fdump(os.Stderr, myVar1)
 
-A third option is to call utter.Sdump to get the formatted output as a string:
+A third option is to call dumper.Sdump to get the formatted output as a string:
 
-	str := utter.Sdump(myVar1)
+	str := dumper.Sdump(myVar1)
 
 # Sample Dump Output
 

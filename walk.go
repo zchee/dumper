@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2013 Dave Collins <dave@davec.name>
  * Copyright (c) 2015 Dan Kortschak <dan.kortschak@adelaide.edu.au>
+ * Copyright (c) 2025 Koichi Shiraishi <zchee.io@gmail.com>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -17,7 +18,9 @@
 
 package dumper
 
-import "reflect"
+import (
+	"reflect"
+)
 
 // walkPtr handles walking of pointers by indirecting them as necessary.
 func (d *dumpState) walkPtr(v reflect.Value) {

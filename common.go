@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2013 Dave Collins <dave@davec.name>
  * Copyright (c) 2015 Dan Kortschak <dan.kortschak@adelaide.edu.au>
+ * Copyright (c) 2025 Koichi Shiraishi <zchee.io@gmail.com>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -133,7 +134,7 @@ func unsafeReflectValue(v reflect.Value) (rv reflect.Value) {
 	upv := unsafe.Add(unsafe.Pointer(&v), offsetPtr)
 	rvf := *(*uintptr)(unsafe.Add(unsafe.Pointer(&v), offsetFlag))
 	if rvf&flagIndir != 0 {
-		vt = reflect.PtrTo(v.Type())
+		vt = reflect.PointerTo(v.Type())
 		indirects++
 	} else if offsetScalar != 0 {
 		// The value is in the scalar field when it's not one of the
@@ -162,13 +163,10 @@ func unsafeReflectValue(v reflect.Value) (rv reflect.Value) {
 // the technique used in the fmt package.
 var (
 	backQuoteBytes        = []byte("`")
-	quoteBytes            = []byte(`"`)
 	plusBytes             = []byte("+")
-	iBytes                = []byte("i")
 	trueBytes             = []byte("true")
 	falseBytes            = []byte("false")
 	interfaceBytes        = []byte("interface{}")
-	interfaceTypeBytes    = []byte("interface {}")
 	commaSpaceBytes       = []byte(", ")
 	commaNewlineBytes     = []byte(",\n")
 	newlineBytes          = []byte("\n")
@@ -183,7 +181,6 @@ var (
 	nilBytes              = []byte("nil")
 	hexZeroBytes          = []byte("0x")
 	zeroBytes             = []byte("0")
-	pointZeroBytes        = []byte(".0")
 	openCommentBytes      = []byte(" /*")
 	closeCommentBytes     = []byte("*/ ")
 	pointerChainBytes     = []byte("->")
