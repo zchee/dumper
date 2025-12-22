@@ -1,36 +1,25 @@
-utter
+dumper
 =====
 
-[![Build status](https://github.com/zchee/dumper/workflows/Test/badge.svg)](https://github.com/zchee/dumper/actions)
- [![Coverage Status](https://coveralls.io/repos/kortschak/utter/badge.svg?branch=master)](https://coveralls.io/r/kortschak/utter?branch=master)
+[![Test](https://github.com/zchee/dumper/actions/workflows/ci.yaml/badge.svg)](https://github.com/zchee/dumper/actions/workflows/ci.yaml)
+[![codecov](https://codecov.io/gh/zchee/dumper/graph/badge.svg?token=9AM2DfBEX6)](https://codecov.io/gh/zchee/dumper)
+[![Go Reference](https://pkg.go.dev/badge/github.com/zchee/dumper.svg)](https://pkg.go.dev/github.com/zchee/dumper)
 
-utter is a fork of the outstanding [go-spew tool](https://github.com/davecgh/go-spew).
+dumper is a fork of the outstanding [go-spew tool](https://github.com/davecgh/go-spew).
 Where go-spew is an aid for debugging, providing annotation of dumped datastructures,
-utter is a tool for taking snapshots of data structures to include in tests or other
-code. An utter dump will not construct cyclic structure literals and a number of
+dumper is a tool for taking snapshots of data structures to include in tests or other
+code. An dumper dump will not construct cyclic structure literals and a number of
 pseudo-code representations of pointer-based structures will require subsequent
 processing.
 
 A comprehensive suite of tests with near 100% test coverage is provided to ensure
-proper functionality. utter is licensed under the liberal ISC license, so it may
+proper functionality. dumper is licensed under the liberal ISC license, so it may
 be used in open source or commercial projects.
-
-## Documentation
-
-[![GoDoc](https://godoc.org/github.com/zchee/dumper?status.svg)](http://godoc.org/github.com/zchee/dumper)
-
-Full `go doc` style documentation for the project can be viewed online without
-installing this package by using the excellent GoDoc site here:
-http://godoc.org/github.com/zchee/dumper
-
-You can also view the documentation locally once the package is installed with
-the `godoc` tool by running `godoc -http=":6060"` and pointing your browser to
-http://localhost:6060/pkg/github.com/zchee/dumper
 
 ## Installation
 
 ```bash
-$ go get -u github.com/zchee/dumper
+go get github.com/zchee/dumper@latest
 ```
 
 ## Quick Start
@@ -38,15 +27,15 @@ $ go get -u github.com/zchee/dumper
 To dump a variable with full newlines, indentation, type, and pointer
 information use Dump, Fdump, or Sdump:
 
-```Go
-utter.Dump(myVar1)
-utter.Fdump(someWriter, myVar1)
-str := utter.Sdump(myVar1)
+```go
+dumper.Dump(myVar1)
+dumper.Fdump(someWriter, myVar1)
+str := dumper.Sdump(myVar1)
 ```
 
 ## Sample Dump Output
 
-```
+```go
 main.Foo{
  unexportedField: &main.Bar{
   flag: main.Flag(1),
@@ -58,7 +47,7 @@ main.Foo{
 }
 ```
 
-```
+```go
 []uint8{
  0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, // |........|
  0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f, 0x20, // |....... |
@@ -70,15 +59,15 @@ main.Foo{
 
 ## Configuration Options
 
-Configuration of utter is handled by fields in the ConfigState type. For
+Configuration of dumper is handled by fields in the ConfigState type. For
 convenience, all of the top-level functions use a global state available via the
-utter.Config global.
+dumper.Config global.
 
 It is also possible to create a ConfigState instance that provides methods
 equivalent to the top-level functions. This allows concurrent configuration
 options. See the ConfigState documentation for more details.
 
-```
+```go
 * Indent
 	String to use for each indentation level for Dump functions.
 	It is a single space by default.  A popular alternative is "\t".
@@ -123,4 +112,4 @@ options. See the ConfigState documentation for more details.
 
 ## License
 
-utter is licensed under the liberal ISC License.
+dumper is licensed under the liberal ISC License.
