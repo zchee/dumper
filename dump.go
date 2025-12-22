@@ -861,9 +861,9 @@ func isZero(v reflect.Value) bool {
 
 // fdump is a helper function to consolidate the logic from the various public
 // methods which take varying writers and config states.
-func fdump(cs *ConfigState, w io.Writer, a any, colorize bool) {
+func fdump(cs *ConfigState, w io.Writer, a any) {
 	if a == nil {
-		writeColor(w, reflect.Interface, colorize, func() {
+		writeColor(w, reflect.Interface, cs.EnableColor, func() {
 			w.Write(interfaceBytes)
 			w.Write(openParenBytes)
 			w.Write(nilBytes)
@@ -873,7 +873,11 @@ func fdump(cs *ConfigState, w io.Writer, a any, colorize bool) {
 		return
 	}
 
-	d := dumpState{w: w, cs: cs, colorize: colorize}
+	d := dumpState{
+		w:        w,
+		cs:       cs,
+		colorize: cs.EnableColor,
+	}
 	d.pointers = make(map[uintptr]int)
 	v := reflect.ValueOf(a)
 	var addr uintptr
@@ -892,14 +896,14 @@ func fdump(cs *ConfigState, w io.Writer, a any, colorize bool) {
 // Fdump formats and displays the passed arguments to io.Writer w.  It formats
 // exactly the same as Dump.
 func Fdump(w io.Writer, a any) {
-	fdump(&Config, w, a, !Config.DisableColor)
+	fdump(&Config, w, a)
 }
 
 // Sdump returns a string with the passed arguments formatted exactly the same
 // as Dump.
 func Sdump(a any) string {
 	var buf bytes.Buffer
-	fdump(&Config, &buf, a, false)
+	fdump(&Config, &buf, a)
 	return buf.String()
 }
 
@@ -922,5 +926,5 @@ See Fdump if you would prefer dumping to an arbitrary io.Writer or Sdump to
 get the formatted result as a string.
 */
 func Dump(a any) {
-	fdump(&Config, os.Stdout, a, !Config.DisableColor)
+	fdump(&Config, os.Stdout, a)
 }

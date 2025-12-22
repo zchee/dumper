@@ -71,9 +71,9 @@ type ConfigState struct {
 	// as comments.
 	CommentPointers bool
 
-	// DisableColor specifies whether Dump and Fdump should omit ANSI color
+	// EnableColor specifies whether Dump and Fdump should ANSI color
 	// sequences. Sdump never includes ANSI colors.
-	DisableColor bool
+	EnableColor bool
 
 	// IgnoreUnexported specifies that unexported struct fields should be
 	// ignored during a dump.
@@ -134,7 +134,7 @@ var Config = ConfigState{
 //
 // It formats exactly the same as Dump.
 func (c *ConfigState) Fdump(w io.Writer, a any) {
-	fdump(c, w, a, !c.DisableColor)
+	fdump(c, w, a)
 }
 
 /*
@@ -156,14 +156,14 @@ See Fdump if you would prefer dumping to an arbitrary io.Writer or Sdump to
 get the formatted result as a string.
 */
 func (c *ConfigState) Dump(a any) {
-	fdump(c, os.Stdout, a, !c.DisableColor)
+	fdump(c, os.Stdout, a)
 }
 
 // Sdump returns a string with the passed arguments formatted exactly the same
 // as Dump.
 func (c *ConfigState) Sdump(a any) string {
 	var buf bytes.Buffer
-	fdump(c, &buf, a, false)
+	fdump(c, &buf, a)
 	return buf.String()
 }
 
@@ -186,6 +186,6 @@ func NewDefaultConfig() *ConfigState {
 		StringWidth:  1,
 		BytesWidth:   16,
 		CommentBytes: true,
-		DisableColor: false,
+		EnableColor:  false,
 	}
 }

@@ -27,8 +27,9 @@ import (
 )
 
 func TestFdumpColorized(t *testing.T) {
+	cfg := dumper.ConfigState{EnableColor: true}
 	buf := new(bytes.Buffer)
-	dumper.Fdump(buf, 42)
+	cfg.Fdump(buf, 42)
 	out := buf.String()
 	if !strings.Contains(out, "\x1b[") {
 		t.Fatalf("expected ANSI sequences in Fdump output: %q", out)
@@ -39,9 +40,8 @@ func TestFdumpColorized(t *testing.T) {
 }
 
 func TestFdumpDisableColor(t *testing.T) {
-	cfg := dumper.ConfigState{DisableColor: true}
 	buf := new(bytes.Buffer)
-	cfg.Fdump(buf, 42)
+	dumper.Fdump(buf, 42)
 	out := buf.String()
 	if strings.Contains(out, "\x1b[") {
 		t.Fatalf("unexpected ANSI sequences in disabled output: %q", out)
