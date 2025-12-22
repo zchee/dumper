@@ -134,6 +134,10 @@ func BenchmarkSdump(b *testing.B) {
 	defaultConfig := dumper.NewDefaultConfig()
 	sortedConfig := dumper.NewDefaultConfig()
 	sortedConfig.SortKeys = true
+	noCommentConfig := dumper.NewDefaultConfig()
+	noCommentConfig.CommentBytes = false
+	addressConfig := dumper.NewDefaultConfig()
+	addressConfig.AddressBytes = true
 
 	benchmarks := map[string]struct {
 		cfg   *dumper.ConfigState
@@ -149,6 +153,14 @@ func BenchmarkSdump(b *testing.B) {
 		},
 		"default: byte slice": {
 			cfg:   defaultConfig,
+			value: data.Bytes,
+		},
+		"default: byte slice (no comment)": {
+			cfg:   noCommentConfig,
+			value: data.Bytes,
+		},
+		"default: byte slice (address)": {
+			cfg:   addressConfig,
 			value: data.Bytes,
 		},
 		"sorted: nested map": {
@@ -174,6 +186,10 @@ func BenchmarkSdump(b *testing.B) {
 func BenchmarkFdump(b *testing.B) {
 	data := newBenchData()
 	defaultConfig := dumper.NewDefaultConfig()
+	noCommentConfig := dumper.NewDefaultConfig()
+	noCommentConfig.CommentBytes = false
+	addressConfig := dumper.NewDefaultConfig()
+	addressConfig.AddressBytes = true
 
 	benchmarks := map[string]struct {
 		cfg   *dumper.ConfigState
@@ -185,6 +201,14 @@ func BenchmarkFdump(b *testing.B) {
 		},
 		"default: byte slice": {
 			cfg:   defaultConfig,
+			value: data.Bytes,
+		},
+		"default: byte slice (no comment)": {
+			cfg:   noCommentConfig,
+			value: data.Bytes,
+		},
+		"default: byte slice (address)": {
+			cfg:   addressConfig,
 			value: data.Bytes,
 		},
 	}
