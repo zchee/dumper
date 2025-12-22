@@ -99,6 +99,12 @@ func ExampleDump() {
 		0x31, 0x32,
 	}
 
+	prev := dumper.Config.DisableColor
+	dumper.Config.DisableColor = true
+	defer func() {
+		dumper.Config.DisableColor = prev
+	}()
+
 	// Dump!
 	dumper.Dump([]any{s1, f, b})
 
@@ -127,7 +133,7 @@ func ExampleDump() {
 func ExampleConfigState() {
 	// Modify the indent level of the ConfigState only.  The global
 	// configuration is not modified.
-	scs := dumper.ConfigState{Indent: "\t"}
+	scs := dumper.ConfigState{Indent: "\t", DisableColor: true}
 
 	// Output using the ConfigState instance.
 	v := map[string]int{"one": 1}
@@ -143,9 +149,10 @@ func ExampleConfigState() {
 // This example demonstrates how to use a Quoting strategy.
 func ExampleConfigState_Quoting() {
 	scs := dumper.ConfigState{
-		Indent:    "\t",
-		ElideType: true,
-		SortKeys:  true,
+		Indent:       "\t",
+		ElideType:    true,
+		SortKeys:     true,
+		DisableColor: true,
 
 		// Avoid escape sequences when present and force
 		// use of backquotes even when the complete string is
@@ -188,8 +195,8 @@ func ExampleConfigState_Dump() {
 	// example.
 
 	// Create two ConfigState instances with different indentation.
-	scs := dumper.ConfigState{Indent: "\t"}
-	scs2 := dumper.ConfigState{Indent: " "}
+	scs := dumper.ConfigState{Indent: "\t", DisableColor: true}
+	scs2 := dumper.ConfigState{Indent: " ", DisableColor: true}
 
 	// Setup some sample data structures for the example.
 	bar := Bar{Flag(flagTwo), uintptr(0)}

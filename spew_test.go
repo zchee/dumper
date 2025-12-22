@@ -408,6 +408,9 @@ func TestSpew(t *testing.T) {
 			continue
 		}
 		s := buf.String()
+		if test.f == fCSFdump {
+			s = stripANSI(s)
+		}
 		if test.want != s {
 			t.Errorf("ConfigState #%d\n got: %q\nwant: %q", i, s, test.want)
 			continue

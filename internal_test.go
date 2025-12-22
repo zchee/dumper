@@ -217,6 +217,42 @@ func TestWriteBufferedChanInfo(t *testing.T) {
 	}
 }
 
+func TestColorForKind(t *testing.T) {
+	seen := make(map[string]reflect.Kind)
+	for kind := reflect.Invalid; kind <= reflect.UnsafePointer; kind++ {
+		color := colorForKind(kind)
+		if len(color) == 0 {
+			t.Fatalf("missing color for kind %v", kind)
+		}
+		key := string(color)
+		if prev, ok := seen[key]; ok {
+			t.Fatalf("color %q reused for %v and %v", key, prev, kind)
+		}
+		seen[key] = kind
+	}
+}
+
+func TestDumpStateWriteColor(t *testing.T) {
+	buf := new(bytes.Buffer)
+	state := dumpState{w: buf, cs: &ConfigState{}, colorize: true}
+	state.writeColor(reflect.Int, func() {
+		buf.WriteString("value")
+	})
+	want := string(colorForKind(reflect.Int)) + "value" + string(ansiReset)
+	if buf.String() != want {
+		t.Fatalf("unexpected colored output: got %q want %q", buf.String(), want)
+	}
+
+	buf.Reset()
+	state.colorize = false
+	state.writeColor(reflect.Int, func() {
+		buf.WriteString("value")
+	})
+	if buf.String() != "value" {
+		t.Fatalf("unexpected uncolored output: got %q want %q", buf.String(), "value")
+	}
+}
+
 // SortMapByKeyVals makes the internal sortMapByKeyVals function available
 // to the test package.
 func SortMapByKeyVals(keys, vals []reflect.Value) {
