@@ -22,6 +22,7 @@
 // certain cgo types specially.  Rather than forcing all clients to require cgo
 // and an external C compiler just to run the tests, this scheme makes them
 // optional.
+//go:build cgo && testcgo
 // +build cgo,testcgo
 
 package testdata
@@ -42,42 +43,42 @@ import "C"
 
 // GetCgoNullCharPointer returns a null char pointer via cgo.  This is only
 // used for tests.
-func GetCgoNullCharPointer() interface{} {
+func GetCgoNullCharPointer() any {
 	return C.ncp
 }
 
 // GetCgoCharPointer returns a char pointer via cgo.  This is only used for
 // tests.
-func GetCgoCharPointer() interface{} {
+func GetCgoCharPointer() any {
 	return C.cp
 }
 
 // GetCgoCharArray returns a char array via cgo and the array's len and cap.
 // This is only used for tests.
-func GetCgoCharArray() interface{} {
+func GetCgoCharArray() any {
 	return C.ca
 }
 
 // GetCgoUnsignedCharArray returns an unsigned char array via cgo and the
 // array's len and cap.  This is only used for tests.
-func GetCgoUnsignedCharArray() interface{} {
+func GetCgoUnsignedCharArray() any {
 	return C.uca
 }
 
 // GetCgoSignedCharArray returns a signed char array via cgo and the array's len
 // and cap.  This is only used for tests.
-func GetCgoSignedCharArray() interface{} {
+func GetCgoSignedCharArray() any {
 	return C.sca
 }
 
 // GetCgoUint8tArray returns a uint8_t array via cgo and the array's len and
 // cap.  This is only used for tests.
-func GetCgoUint8tArray() interface{} {
+func GetCgoUint8tArray() any {
 	return C.ui8ta
 }
 
 // GetCgoTypdefedUnsignedCharArray returns a typedefed unsigned char array via
 // cgo and the array's len and cap.  This is only used for tests.
-func GetCgoTypdefedUnsignedCharArray() interface{} {
+func GetCgoTypdefedUnsignedCharArray() any {
 	return C.tuca
 }

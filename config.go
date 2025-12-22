@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2013 Dave Collins <dave@davec.name>
  * Copyright (c) 2015 Dan Kortschak <dan.kortschak@adelaide.edu.au>
+ * Copyright (c) 2025 Koichi Shiraishi <zchee.io@gmail.com>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -127,7 +128,7 @@ var Config = ConfigState{
 
 // Fdump formats and displays the passed arguments to io.Writer w.  It formats
 // exactly the same as Dump.
-func (c *ConfigState) Fdump(w io.Writer, a interface{}) {
+func (c *ConfigState) Fdump(w io.Writer, a any) {
 	fdump(c, w, a)
 }
 
@@ -149,13 +150,13 @@ of c.  See ConfigState for options documentation.
 See Fdump if you would prefer dumping to an arbitrary io.Writer or Sdump to
 get the formatted result as a string.
 */
-func (c *ConfigState) Dump(a interface{}) {
+func (c *ConfigState) Dump(a any) {
 	fdump(c, os.Stdout, a)
 }
 
 // Sdump returns a string with the passed arguments formatted exactly the same
 // as Dump.
-func (c *ConfigState) Sdump(a interface{}) string {
+func (c *ConfigState) Sdump(a any) string {
 	var buf bytes.Buffer
 	fdump(c, &buf, a)
 	return buf.String()

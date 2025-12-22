@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2013 Dave Collins <dave@davec.name>
  * Copyright (c) 2015 Dan Kortschak <dan.kortschak@adelaide.edu.au>
+ * Copyright (c) 2025 Koichi Shiraishi <zchee.io@gmail.com>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -20,6 +21,8 @@ package dumper_test
 import (
 	"fmt"
 	"reflect"
+	"slices"
+	"strings"
 	"testing"
 
 	"github.com/zchee/dumper"
@@ -48,6 +51,7 @@ func (s *pstringer) String() string {
 type xref1 struct {
 	ps2 *xref2
 }
+
 type xref2 struct {
 	ps1 *xref1
 }
@@ -57,9 +61,11 @@ type xref2 struct {
 type indirCir1 struct {
 	ps2 *indirCir2
 }
+
 type indirCir2 struct {
 	ps3 *indirCir3
 }
+
 type indirCir3 struct {
 	ps1 *indirCir1
 }
@@ -93,33 +99,28 @@ func (e customError) Error() string {
 // stringizeWants converts a slice of wanted test output into a format suitable
 // for a test error message.
 func stringizeWants(wants []string) string {
-	s := ""
+	var s strings.Builder
 	for i, want := range wants {
 		if i > 0 {
-			s += fmt.Sprintf("want%d: %q", i+1, want)
+			s.WriteString(fmt.Sprintf("want%d: %q", i+1, want))
 		} else {
-			s += fmt.Sprintf("want: %q", want)
+			s.WriteString(fmt.Sprintf("want: %q", want))
 		}
 	}
-	return s
+	return s.String()
 }
 
 // testFailed returns whether or not a test failed by checking if the result
 // of the test is in the slice of wanted strings.
 func testFailed(result string, wants []string) bool {
-	for _, want := range wants {
-		if result == want {
-			return false
-		}
-	}
-	return true
+	return !slices.Contains(wants, result)
 }
 
 // TestSortValues ensures the sort functionality for reflect.Value based sorting
 // works as intended.
 func TestSortValues(t *testing.T) {
-	getInterfaces := func(values []reflect.Value) []interface{} {
-		interfaces := []interface{}{}
+	getInterfaces := func(values []reflect.Value) []any {
+		interfaces := []any{}
 		for _, v := range values {
 			interfaces = append(interfaces, v.Interface())
 		}
@@ -187,7 +188,7 @@ func TestSortValues(t *testing.T) {
 	for _, test := range tests {
 		vals := make([]reflect.Value, len(test.input))
 		copy(vals, test.input)
-		utter.SortMapByKeyVals(test.input, vals)
+		dumper.SortMapByKeyVals(test.input, vals)
 		// reflect.DeepEqual cannot really make sense of reflect.Value,
 		// probably because of all the pointer tricks. For instance,
 		// v(2.0) != v(2.0) on a 32-bits system. Turn them into interface{}

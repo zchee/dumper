@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2013 Dave Collins <dave@davec.name>
  * Copyright (c) 2015 Dan Kortschak <dan.kortschak@adelaide.edu.au>
+ * Copyright (c) 2025 Koichi Shiraishi <zchee.io@gmail.com>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -49,7 +50,7 @@ type Bar struct {
 
 type Foo struct {
 	unexportedField Bar
-	ExportedField   map[interface{}]interface{}
+	ExportedField   map[any]any
 }
 
 // This example demonstrates how to use Dump to dump variables to stdout.
@@ -88,7 +89,7 @@ func ExampleDump() {
 
 	// Setup some sample data structures for the example.
 	bar := Bar{Flag(flagTwo), uintptr(0)}
-	s1 := Foo{bar, map[interface{}]interface{}{"one": true}}
+	s1 := Foo{bar, map[any]any{"one": true}}
 	f := Flag(5)
 	b := []byte{
 		0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18,
@@ -99,21 +100,21 @@ func ExampleDump() {
 	}
 
 	// Dump!
-	utter.Dump([]interface{}{s1, f, b})
+	dumper.Dump([]any{s1, f, b})
 
 	// Output:
 	//
 	// []interface{}{
-	//  utter_test.Foo{
-	//   unexportedField: utter_test.Bar{
-	//    flag: utter_test.Flag(1),
+	//  dumper_test.Foo{
+	//   unexportedField: dumper_test.Bar{
+	//    flag: dumper_test.Flag(1),
 	//    data: uintptr(0),
 	//   },
 	//   ExportedField: map[interface{}]interface{}{
 	//    string("one"): bool(true),
 	//   },
 	//  },
-	//  utter_test.Flag(5),
+	//  dumper_test.Flag(5),
 	//  []uint8{
 	//   0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f, 0x20, // |............... |
 	//   0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28, 0x29, 0x2a, 0x2b, 0x2c, 0x2d, 0x2e, 0x2f, 0x30, // |!"#$%&'()*+,-./0|
@@ -126,7 +127,7 @@ func ExampleDump() {
 func ExampleConfigState() {
 	// Modify the indent level of the ConfigState only.  The global
 	// configuration is not modified.
-	scs := utter.ConfigState{Indent: "\t"}
+	scs := dumper.ConfigState{Indent: "\t"}
 
 	// Output using the ConfigState instance.
 	v := map[string]int{"one": 1}
@@ -141,13 +142,15 @@ func ExampleConfigState() {
 
 // This example demonstrates how to use a Quoting strategy.
 func ExampleConfigState_Quoting() {
-	scs := utter.ConfigState{
-		Indent: "\t", ElideType: true, SortKeys: true,
+	scs := dumper.ConfigState{
+		Indent:    "\t",
+		ElideType: true,
+		SortKeys:  true,
 
 		// Avoid escape sequences when present and force
 		// use of backquotes even when the complete string is
 		// not backquotable.
-		Quoting: utter.AvoidEscapes | utter.Force,
+		Quoting: dumper.AvoidEscapes | dumper.Force,
 	}
 
 	v := map[string]string{
@@ -185,12 +188,12 @@ func ExampleConfigState_Dump() {
 	// example.
 
 	// Create two ConfigState instances with different indentation.
-	scs := utter.ConfigState{Indent: "\t"}
-	scs2 := utter.ConfigState{Indent: " "}
+	scs := dumper.ConfigState{Indent: "\t"}
+	scs2 := dumper.ConfigState{Indent: " "}
 
 	// Setup some sample data structures for the example.
 	bar := Bar{Flag(flagTwo), uintptr(0)}
-	s1 := Foo{bar, map[interface{}]interface{}{"one": true}}
+	s1 := Foo{bar, map[any]any{"one": true}}
 
 	// Dump using the ConfigState instances.
 	scs.Dump(s1)
@@ -198,18 +201,18 @@ func ExampleConfigState_Dump() {
 
 	// Output:
 	//
-	// utter_test.Foo{
-	// 	unexportedField: utter_test.Bar{
-	// 		flag: utter_test.Flag(1),
+	// dumper_test.Foo{
+	// 	unexportedField: dumper_test.Bar{
+	// 		flag: dumper_test.Flag(1),
 	// 		data: uintptr(0),
 	// 	},
 	// 	ExportedField: map[interface{}]interface{}{
 	// 		string("one"): bool(true),
 	// 	},
 	// }
-	// utter_test.Foo{
-	//  unexportedField: utter_test.Bar{
-	//   flag: utter_test.Flag(1),
+	// dumper_test.Foo{
+	//  unexportedField: dumper_test.Bar{
+	//   flag: dumper_test.Flag(1),
 	//   data: uintptr(0),
 	//  },
 	//  ExportedField: map[interface{}]interface{}{
