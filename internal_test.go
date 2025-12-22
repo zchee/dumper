@@ -31,25 +31,6 @@ import (
 	"unsafe"
 )
 
-// dummyFmtState implements a fake fmt.State to use for testing invalid
-// reflect.Value handling.  This is necessary because the fmt package catches
-// invalid values before invoking the formatter on them.
-type dummyFmtState struct {
-	bytes.Buffer
-}
-
-func (dfs *dummyFmtState) Flag(f int) bool {
-	return f == int('+')
-}
-
-func (dfs *dummyFmtState) Precision() (int, bool) {
-	return 0, false
-}
-
-func (dfs *dummyFmtState) Width() (int, bool) {
-	return 0, false
-}
-
 // TestInvalidReflectValue ensures the dump and formatter code handles an
 // invalid reflect value properly.  This needs access to internal state since it
 // should never happen in real code and therefore can't be tested via the public
@@ -218,17 +199,42 @@ func TestWriteBufferedChanInfo(t *testing.T) {
 }
 
 func TestColorForKind(t *testing.T) {
-	seen := make(map[string]reflect.Kind)
+	allowed := map[string]struct{}{
+		string(ansiBlack):   {},
+		string(ansiRed):     {},
+		string(ansiGreen):   {},
+		string(ansiYellow):  {},
+		string(ansiBlue):    {},
+		string(ansiMagenta): {},
+		string(ansiCyan):    {},
+		string(ansiWhite):   {},
+
+		string(ansiBoldBlack):   {},
+		string(ansiBoldRed):     {},
+		string(ansiBoldGreen):   {},
+		string(ansiBoldYellow):  {},
+		string(ansiBoldBlue):    {},
+		string(ansiBoldMagenta): {},
+		string(ansiBoldCyan):    {},
+		string(ansiBoldWhite):   {},
+
+		string(ansiBrightBlack):   {},
+		string(ansiBrightRed):     {},
+		string(ansiBrightGreen):   {},
+		string(ansiBrightYellow):  {},
+		string(ansiBrightBlue):    {},
+		string(ansiBrightMagenta): {},
+		string(ansiBrightCyan):    {},
+		string(ansiBrightWhite):   {},
+	}
 	for kind := reflect.Invalid; kind <= reflect.UnsafePointer; kind++ {
 		color := colorForKind(kind)
 		if len(color) == 0 {
 			t.Fatalf("missing color for kind %v", kind)
 		}
-		key := string(color)
-		if prev, ok := seen[key]; ok {
-			t.Fatalf("color %q reused for %v and %v", key, prev, kind)
+		if _, ok := allowed[string(color)]; !ok {
+			t.Fatalf("color %q for kind %v is not a 4-bit ANSI color", color, kind)
 		}
-		seen[key] = kind
 	}
 }
 

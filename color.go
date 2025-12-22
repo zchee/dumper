@@ -27,34 +27,62 @@ const kindColorCount = int(reflect.UnsafePointer) + 1
 
 var ansiReset = []byte("\x1b[0m")
 
+//nolint:unused
+var (
+	ansiBlack         = []byte("\x1b[30m")
+	ansiRed           = []byte("\x1b[31m")
+	ansiGreen         = []byte("\x1b[32m")
+	ansiYellow        = []byte("\x1b[33m")
+	ansiBlue          = []byte("\x1b[34m")
+	ansiMagenta       = []byte("\x1b[35m")
+	ansiCyan          = []byte("\x1b[36m")
+	ansiWhite         = []byte("\x1b[37m")
+	ansiBoldBlack     = []byte("\x1b[30;1m")
+	ansiBoldRed       = []byte("\x1b[31;1m")
+	ansiBoldGreen     = []byte("\x1b[32;1m")
+	ansiBoldYellow    = []byte("\x1b[33;1m")
+	ansiBoldBlue      = []byte("\x1b[34;1m")
+	ansiBoldMagenta   = []byte("\x1b[35;1m")
+	ansiBoldCyan      = []byte("\x1b[36;1m")
+	ansiBoldWhite     = []byte("\x1b[37;1m")
+	ansiBrightBlack   = []byte("\x1b[90m")
+	ansiBrightRed     = []byte("\x1b[91m")
+	ansiBrightGreen   = []byte("\x1b[92m")
+	ansiBrightYellow  = []byte("\x1b[93m")
+	ansiBrightBlue    = []byte("\x1b[94m")
+	ansiBrightMagenta = []byte("\x1b[95m")
+	ansiBrightCyan    = []byte("\x1b[96m")
+	ansiBrightWhite   = []byte("\x1b[97m")
+)
+
 var kindColor = [kindColorCount][]byte{
-	reflect.Invalid:       []byte("\x1b[38;5;240m"),
-	reflect.Bool:          []byte("\x1b[38;5;46m"),
-	reflect.Int:           []byte("\x1b[38;5;208m"),
-	reflect.Int8:          []byte("\x1b[38;5;202m"),
-	reflect.Int16:         []byte("\x1b[38;5;214m"),
-	reflect.Int32:         []byte("\x1b[38;5;220m"),
-	reflect.Int64:         []byte("\x1b[38;5;226m"),
-	reflect.Uint:          []byte("\x1b[38;5;118m"),
-	reflect.Uint8:         []byte("\x1b[38;5;82m"),
-	reflect.Uint16:        []byte("\x1b[38;5;75m"),
-	reflect.Uint32:        []byte("\x1b[38;5;51m"),
-	reflect.Uint64:        []byte("\x1b[38;5;39m"),
-	reflect.Uintptr:       []byte("\x1b[38;5;33m"),
-	reflect.Float32:       []byte("\x1b[38;5;129m"),
-	reflect.Float64:       []byte("\x1b[38;5;93m"),
-	reflect.Complex64:     []byte("\x1b[38;5;161m"),
-	reflect.Complex128:    []byte("\x1b[38;5;198m"),
-	reflect.Array:         []byte("\x1b[38;5;69m"),
-	reflect.Chan:          []byte("\x1b[38;5;105m"),
-	reflect.Func:          []byte("\x1b[38;5;135m"),
-	reflect.Interface:     []byte("\x1b[38;5;244m"),
-	reflect.Map:           []byte("\x1b[38;5;31m"),
-	reflect.Pointer:       []byte("\x1b[38;5;196m"),
-	reflect.Slice:         []byte("\x1b[38;5;45m"),
-	reflect.String:        []byte("\x1b[38;5;34m"),
-	reflect.Struct:        []byte("\x1b[38;5;141m"),
-	reflect.UnsafePointer: []byte("\x1b[38;5;160m"),
+	reflect.Invalid:       ansiBrightBlack,
+	reflect.Bool:          ansiYellow,
+	reflect.Int:           ansiMagenta,
+	reflect.Int8:          ansiMagenta,
+	reflect.Int16:         ansiMagenta,
+	reflect.Int32:         ansiMagenta,
+	reflect.Int64:         ansiMagenta,
+	reflect.Uint:          ansiMagenta,
+	reflect.Uint8:         ansiMagenta,
+	reflect.Uint16:        ansiMagenta,
+	reflect.Uint32:        ansiMagenta,
+	reflect.Uint64:        ansiMagenta,
+	reflect.Uintptr:       ansiMagenta,
+	reflect.Float32:       ansiBoldMagenta,
+	reflect.Float64:       ansiBoldMagenta,
+	reflect.Complex64:     ansiRed,
+	reflect.Complex128:    ansiRed,
+	reflect.Array:         ansiBlue,
+	reflect.Chan:          ansiBrightMagenta,
+	reflect.Func:          ansiBrightYellow,
+	reflect.Interface:     ansiBrightBlack,
+	reflect.Map:           ansiBrightCyan,
+	reflect.Pointer:       ansiBoldBlue,
+	reflect.Slice:         ansiBoldBlue,
+	reflect.String:        ansiGreen,
+	reflect.Struct:        ansiWhite,
+	reflect.UnsafePointer: ansiBrightRed,
 }
 
 func colorForKind(kind reflect.Kind) []byte {

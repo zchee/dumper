@@ -28,15 +28,6 @@ import (
 	"github.com/zchee/dumper"
 )
 
-// custom type to test Stinger interface on non-pointer receiver.
-type stringer string
-
-// String implements the Stringer interface for testing invocation of custom
-// stringers on types with non-pointer receivers.
-func (s stringer) String() string {
-	return "stringer " + string(s)
-}
-
 // custom type to test Stinger interface on pointer receiver.
 type pstringer string
 
@@ -79,21 +70,6 @@ type embed struct {
 type embedwrap struct {
 	*embed
 	e *embed
-}
-
-// panicer is used to intentionally cause a panic for testing dumper properly
-// handles them
-type panicer int
-
-func (p panicer) String() string {
-	panic("test panic")
-}
-
-// customError is used to test custom error interface invocation.
-type customError int
-
-func (e customError) Error() string {
-	return fmt.Sprintf("error: %d", int(e))
 }
 
 // stringizeWants converts a slice of wanted test output into a format suitable
