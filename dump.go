@@ -65,6 +65,7 @@ type dumpState struct {
 	ignoreNextType   bool
 	ignoreNextIndent bool
 	cs               *ConfigState
+	colorize         bool
 	indentUnit       []byte
 	indentCache      [][]byte
 	typeCache        map[reflect.Type][]byte
@@ -120,6 +121,10 @@ func (d *dumpState) typeBytes(typ reflect.Type) []byte {
 	return converted
 }
 
+func (d *dumpState) writeColor(kind reflect.Kind, write func()) {
+	writeColor(d.w, kind, d.colorize, write)
+}
+
 func writeBufferedChanInfo(w io.Writer, scratch []byte, capacity, length int) {
 	w.Write(commaSpaceBytes)
 	printInt(w, scratch, int64(capacity), 10)
@@ -170,6 +175,7 @@ func (d *dumpState) dumpPtr(v reflect.Value) {
 
 	// Keep the original value in case we have already displayed it.
 	orig := v
+	pointerKind := reflect.Pointer
 
 	// Figure out how many levels of indirection there are by dereferencing
 	// pointers and unpacking interfaces down the chain while detecting circular
@@ -221,10 +227,12 @@ func (d *dumpState) dumpPtr(v reflect.Value) {
 	if kind == reflect.Pointer || bufferedChan {
 		d.w.Write(openParenBytes)
 	}
-	d.w.Write(typeBytes)
-	if bufferedChan {
-		writeBufferedChanInfo(d.w, d.scratch[:0], v.Cap(), v.Len())
-	}
+	d.writeColor(pointerKind, func() {
+		d.w.Write(typeBytes)
+		if bufferedChan {
+			writeBufferedChanInfo(d.w, d.scratch[:0], v.Cap(), v.Len())
+		}
+	})
 	if displayed || bufferedChan || kind == reflect.Pointer {
 		d.w.Write(closeParenBytes)
 	}
@@ -236,7 +244,9 @@ func (d *dumpState) dumpPtr(v reflect.Value) {
 			if i > 0 {
 				d.w.Write(pointerChainBytes)
 			}
-			printHexPtr(d.w, addr, true)
+			d.writeColor(pointerKind, func() {
+				printHexPtr(d.w, addr, true)
+			})
 		}
 		d.w.Write(closeCommentBytes)
 	}
@@ -244,12 +254,16 @@ func (d *dumpState) dumpPtr(v reflect.Value) {
 	// Display dereferenced value.
 	switch {
 	case nilFound:
-		d.w.Write(openParenBytes)
-		d.w.Write(nilBytes)
-		d.w.Write(closeParenBytes)
+		d.writeColor(pointerKind, func() {
+			d.w.Write(openParenBytes)
+			d.w.Write(nilBytes)
+			d.w.Write(closeParenBytes)
+		})
 
 	case cycleFound, displayed:
-		d.w.Write(circularBytes)
+		d.writeColor(pointerKind, func() {
+			d.w.Write(circularBytes)
+		})
 
 	default:
 		d.ignoreNextType = true
@@ -335,10 +349,15 @@ func (d *dumpState) dumpSlice(v reflect.Value, canElideCompound bool) {
 	}
 
 	// Prepare indenting for slice.
+	kind := v.Kind()
 	if nPeriod == 0 {
-		d.w.Write(openBraceBytes)
+		d.writeColor(kind, func() {
+			d.w.Write(openBraceBytes)
+		})
 	} else {
-		d.w.Write(openBraceNewlineBytes)
+		d.writeColor(kind, func() {
+			d.w.Write(openBraceNewlineBytes)
+		})
 	}
 	d.depth++
 	defer func() {
@@ -346,13 +365,17 @@ func (d *dumpState) dumpSlice(v reflect.Value, canElideCompound bool) {
 		if nPeriod != 0 {
 			d.indent()
 		}
-		d.w.Write(closeBraceBytes)
+		d.writeColor(kind, func() {
+			d.w.Write(closeBraceBytes)
+		})
 	}()
 
 	// Hexdump the entire slice as needed.
 	if doHexDump {
 		indent := d.indentBytes(d.depth)
-		hexDump(d.w, buf, indent, d.cs.BytesWidth, d.cs.CommentBytes, d.cs.AddressBytes)
+		d.writeColor(kind, func() {
+			hexDump(d.w, buf, indent, d.cs.BytesWidth, d.cs.CommentBytes, d.cs.AddressBytes)
+		})
 		return
 	}
 
@@ -400,7 +423,9 @@ func (d *dumpState) dump(v reflect.Value, wasPtr, static, canElideCompound bool,
 	// Handle invalid reflect values immediately.
 	kind := v.Kind()
 	if kind == reflect.Invalid {
-		d.w.Write(invalidAngleBytes)
+		d.writeColor(kind, func() {
+			d.w.Write(invalidAngleBytes)
+		})
 		return
 	}
 
@@ -431,9 +456,13 @@ func (d *dumpState) dump(v reflect.Value, wasPtr, static, canElideCompound bool,
 				d.w.Write(openParenBytes)
 			}
 			typeBytes := d.typeBytes(v.Type())
-			d.w.Write(typeBytes)
+			d.writeColor(kind, func() {
+				d.w.Write(typeBytes)
+				if bufferedChan {
+					writeBufferedChanInfo(d.w, d.scratch[:0], v.Cap(), v.Len())
+				}
+			})
 			if bufferedChan {
-				writeBufferedChanInfo(d.w, d.scratch[:0], v.Cap(), v.Len())
 				d.w.Write(closeParenBytes)
 			}
 		}
@@ -450,7 +479,9 @@ func (d *dumpState) dump(v reflect.Value, wasPtr, static, canElideCompound bool,
 
 	if _, referenced := d.nodes[addrType{addr, typ}]; !wasPtr && referenced {
 		d.w.Write(openCommentBytes)
-		printHexPtr(d.w, addr, true)
+		d.writeColor(reflect.Pointer, func() {
+			printHexPtr(d.w, addr, true)
+		})
 		d.w.Write(closeCommentBytes)
 	}
 	switch kind {
@@ -459,32 +490,48 @@ func (d *dumpState) dump(v reflect.Value, wasPtr, static, canElideCompound bool,
 		panic("cannot reach")
 
 	case reflect.Bool:
-		printBool(d.w, v.Bool())
+		d.writeColor(kind, func() {
+			printBool(d.w, v.Bool())
+		})
 
 	case reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Int:
-		printInt(d.w, d.scratch[:0], v.Int(), 10)
+		d.writeColor(kind, func() {
+			printInt(d.w, d.scratch[:0], v.Int(), 10)
+		})
 
 	case reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uint:
-		d.w.Write(hexZeroBytes)
-		printUint(d.w, d.scratch[:0], v.Uint(), 16)
+		d.writeColor(kind, func() {
+			d.w.Write(hexZeroBytes)
+			printUint(d.w, d.scratch[:0], v.Uint(), 16)
+		})
 
 	case reflect.Float32:
-		printFloat(d.w, d.scratch[:0], v.Float(), 32, !wantType)
+		d.writeColor(kind, func() {
+			printFloat(d.w, d.scratch[:0], v.Float(), 32, !wantType)
+		})
 
 	case reflect.Float64:
-		printFloat(d.w, d.scratch[:0], v.Float(), 64, !wantType)
+		d.writeColor(kind, func() {
+			printFloat(d.w, d.scratch[:0], v.Float(), 64, !wantType)
+		})
 
 	case reflect.Complex64:
-		printComplex(d.w, d.scratch[:0], v.Complex(), 32)
+		d.writeColor(kind, func() {
+			printComplex(d.w, d.scratch[:0], v.Complex(), 32)
+		})
 
 	case reflect.Complex128:
-		printComplex(d.w, d.scratch[:0], v.Complex(), 64)
+		d.writeColor(kind, func() {
+			printComplex(d.w, d.scratch[:0], v.Complex(), 64)
+		})
 
 	case reflect.Slice:
 		if v.IsNil() {
-			d.w.Write(openParenBytes)
-			d.w.Write(nilBytes)
-			d.w.Write(closeParenBytes)
+			d.writeColor(kind, func() {
+				d.w.Write(openParenBytes)
+				d.w.Write(nilBytes)
+				d.w.Write(closeParenBytes)
+			})
 			break
 		}
 		if v.Len() == 0 {
@@ -500,7 +547,9 @@ func (d *dumpState) dump(v reflect.Value, wasPtr, static, canElideCompound bool,
 		}
 		addr = v.Index(0).Addr().Pointer()
 		if pd, ok := d.pointers[addr]; ok && pd < d.depth {
-			d.w.Write(circularBytes)
+			d.writeColor(kind, func() {
+				d.w.Write(circularBytes)
+			})
 			break
 		}
 		d.pointers[addr] = d.depth
@@ -511,13 +560,17 @@ func (d *dumpState) dump(v reflect.Value, wasPtr, static, canElideCompound bool,
 		d.dumpSlice(v, !interfaceContext)
 
 	case reflect.String:
-		d.writeQuoted(v.String())
+		d.writeColor(kind, func() {
+			d.writeQuoted(v.String())
+		})
 
 	case reflect.Interface:
 		// The only time we should get here is for nil interfaces due to
 		// unpackValue calls.
 		if v.IsNil() {
-			d.w.Write(nilBytes)
+			d.writeColor(kind, func() {
+				d.w.Write(nilBytes)
+			})
 		}
 
 	case reflect.Pointer:
@@ -527,9 +580,11 @@ func (d *dumpState) dump(v reflect.Value, wasPtr, static, canElideCompound bool,
 	case reflect.Map:
 		// nil maps should be indicated as different than empty maps
 		if v.IsNil() {
-			d.w.Write(openParenBytes)
-			d.w.Write(nilBytes)
-			d.w.Write(closeParenBytes)
+			d.writeColor(kind, func() {
+				d.w.Write(openParenBytes)
+				d.w.Write(nilBytes)
+				d.w.Write(closeParenBytes)
+			})
 			break
 		}
 
@@ -542,12 +597,16 @@ func (d *dumpState) dump(v reflect.Value, wasPtr, static, canElideCompound bool,
 		}
 		addr := v.Pointer()
 		if pd, ok := d.pointers[addr]; ok && pd < d.depth {
-			d.w.Write(circularBytes)
+			d.writeColor(kind, func() {
+				d.w.Write(circularBytes)
+			})
 			break
 		}
 		d.pointers[addr] = d.depth
 
-		d.w.Write(openBraceNewlineBytes)
+		d.writeColor(kind, func() {
+			d.w.Write(openBraceNewlineBytes)
+		})
 		d.depth++
 		if d.cs.SortKeys {
 			iter := v.MapRange()
@@ -581,10 +640,14 @@ func (d *dumpState) dump(v reflect.Value, wasPtr, static, canElideCompound bool,
 		}
 		d.depth--
 		d.indent()
-		d.w.Write(closeBraceBytes)
+		d.writeColor(kind, func() {
+			d.w.Write(closeBraceBytes)
+		})
 
 	case reflect.Struct:
-		d.w.Write(openBraceNewlineBytes)
+		d.writeColor(kind, func() {
+			d.w.Write(openBraceNewlineBytes)
+		})
 		d.depth++
 		vt := v.Type()
 		numFields := v.NumField()
@@ -606,23 +669,31 @@ func (d *dumpState) dump(v reflect.Value, wasPtr, static, canElideCompound bool,
 		}
 		d.depth--
 		d.indent()
-		d.w.Write(closeBraceBytes)
+		d.writeColor(kind, func() {
+			d.w.Write(closeBraceBytes)
+		})
 
 	case reflect.Uintptr:
-		printHexPtr(d.w, uintptr(v.Uint()), false)
+		d.writeColor(kind, func() {
+			printHexPtr(d.w, uintptr(v.Uint()), false)
+		})
 
 	case reflect.UnsafePointer, reflect.Chan, reflect.Func:
-		printHexPtr(d.w, v.Pointer(), true)
+		d.writeColor(kind, func() {
+			printHexPtr(d.w, v.Pointer(), true)
+		})
 
 	// There were not any other types at the time this code was written, but
 	// fall back to letting the default fmt package handle it in case any new
 	// types are added.
 	default:
-		if v.CanInterface() {
-			fmt.Fprintf(d.w, "%v", v.Interface())
-		} else {
-			fmt.Fprintf(d.w, "%v", v.String())
-		}
+		d.writeColor(kind, func() {
+			if v.CanInterface() {
+				fmt.Fprintf(d.w, "%v", v.Interface())
+			} else {
+				fmt.Fprintf(d.w, "%v", v.String())
+			}
+		})
 	}
 	if wantType {
 		switch kind {
@@ -790,17 +861,19 @@ func isZero(v reflect.Value) bool {
 
 // fdump is a helper function to consolidate the logic from the various public
 // methods which take varying writers and config states.
-func fdump(cs *ConfigState, w io.Writer, a any) {
+func fdump(cs *ConfigState, w io.Writer, a any, colorize bool) {
 	if a == nil {
-		w.Write(interfaceBytes)
-		w.Write(openParenBytes)
-		w.Write(nilBytes)
-		w.Write(closeParenBytes)
+		writeColor(w, reflect.Interface, colorize, func() {
+			w.Write(interfaceBytes)
+			w.Write(openParenBytes)
+			w.Write(nilBytes)
+			w.Write(closeParenBytes)
+		})
 		w.Write(newlineBytes)
 		return
 	}
 
-	d := dumpState{w: w, cs: cs}
+	d := dumpState{w: w, cs: cs, colorize: colorize}
 	d.pointers = make(map[uintptr]int)
 	v := reflect.ValueOf(a)
 	var addr uintptr
@@ -819,14 +892,14 @@ func fdump(cs *ConfigState, w io.Writer, a any) {
 // Fdump formats and displays the passed arguments to io.Writer w.  It formats
 // exactly the same as Dump.
 func Fdump(w io.Writer, a any) {
-	fdump(&Config, w, a)
+	fdump(&Config, w, a, !Config.DisableColor)
 }
 
 // Sdump returns a string with the passed arguments formatted exactly the same
 // as Dump.
 func Sdump(a any) string {
 	var buf bytes.Buffer
-	fdump(&Config, &buf, a)
+	fdump(&Config, &buf, a, false)
 	return buf.String()
 }
 
@@ -849,5 +922,5 @@ See Fdump if you would prefer dumping to an arbitrary io.Writer or Sdump to
 get the formatted result as a string.
 */
 func Dump(a any) {
-	fdump(&Config, os.Stdout, a)
+	fdump(&Config, os.Stdout, a, !Config.DisableColor)
 }
