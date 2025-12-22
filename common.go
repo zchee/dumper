@@ -19,7 +19,6 @@
 package dumper
 
 import (
-	"bytes"
 	"fmt"
 	"io"
 	"math"
@@ -263,9 +262,18 @@ func hexDump(w io.Writer, data []byte, indent []byte, width int, comment, addr b
 	}
 	var addrBuf [32]byte
 	var addrDigitsBuf [32]byte
-	var padSpaces []byte
+	padCap := 0
 	if needsPadding {
-		padSpaces = bytes.Repeat([]byte("      "), width)
+		remainder := len(data) % width
+		slots := width - remainder
+		switch {
+		case slots <= 0:
+			// Do nothing.
+		case slots == 1:
+			padCap = 6
+		default:
+			padCap = 12 + (slots-2)*6
+		}
 	}
 
 	lineCap := len(indent)
@@ -276,7 +284,7 @@ func hexDump(w io.Writer, data []byte, indent []byte, width int, comment, addr b
 	if comment {
 		lineCap += len(commentPrefixBytes) + len(commentSuffixBytes) + width
 		if needsPadding {
-			lineCap += 12 + width*6
+			lineCap += padCap
 		}
 	} else {
 		lineCap++
@@ -343,8 +351,8 @@ func hexDump(w io.Writer, data []byte, indent []byte, width int, comment, addr b
 				line = append(line, ' ', '/', '*', ' ', '*', '/')
 			default:
 				line = append(line, ' ', '/', '*', ' ', ' ', ' ')
-				if padLen := (slots - 2) * 6; padLen > 0 {
-					line = append(line, padSpaces[:padLen]...)
+				for i := 0; i < slots-2; i++ {
+					line = append(line, ' ', ' ', ' ', ' ', ' ', ' ')
 				}
 				line = append(line, ' ', ' ', ' ', ' ', '*', '/')
 			}
