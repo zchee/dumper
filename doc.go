@@ -45,6 +45,10 @@ information use Dump, Fdump, or Sdump:
 	dumper.Fdump(someWriter, myVar1)
 	str := dumper.Sdump(myVar1)
 
+Dump and Fdump emit ANSI-colored output by default. To disable colorization,
+set Config.DisableColor (or ConfigState.DisableColor). Sdump is always
+uncolored for stable snapshot strings.
+
 # Configuration Options
 
 Configuration of dumper is handled by fields in the ConfigState type.  For
@@ -81,6 +85,10 @@ The following configuration options are available:
     CommentPointers specifies whether pointer information will be added
     as comments.
 
+  - DisableColor
+    DisableColor specifies whether Dump and Fdump should omit ANSI color
+    sequences. Sdump never includes ANSI colors.
+
   - IgnoreUnexported
     Specifies that unexported fields should be ignored.
 
@@ -115,6 +123,9 @@ A third option is to call dumper.Sdump to get the formatted output as a string:
 
 See the Dump example for details on the setup of the types and variables being
 shown here.
+
+Note: The sample output is shown without ANSI color sequences. Dump and Fdump
+emit colored output by default unless DisableColor is set.
 
 	main.Foo{
 	 unexportedField: &main.Bar{
