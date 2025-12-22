@@ -19,9 +19,8 @@ package dumper_test
 
 import (
 	"bytes"
+	"reflect"
 	"testing"
-
-	"github.com/google/go-cmp/cmp"
 
 	"github.com/zchee/dumper"
 )
@@ -122,8 +121,8 @@ func TestNewBenchData(t *testing.T) {
 				ChildrenLen: len(data.Children),
 				NestedLen:   len(data.Nested),
 			}
-			if diff := cmp.Diff(test.want, got); diff != "" {
-				t.Errorf("unexpected bench data shape (-want +got):\n%s", diff)
+			if !reflect.DeepEqual(test.want, got) {
+				t.Errorf("unexpected bench data shape: got %#v want %#v", got, test.want)
 			}
 		})
 	}
