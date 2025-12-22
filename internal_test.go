@@ -28,8 +28,6 @@ import (
 	"reflect"
 	"testing"
 	"unsafe"
-
-	"github.com/google/go-cmp/cmp"
 )
 
 // dummyFmtState implements a fake fmt.State to use for testing invalid
@@ -144,8 +142,8 @@ func TestDumpStateIndentBytes(t *testing.T) {
 			for _, depth := range test.depths {
 				got = append(got, string(state.indentBytes(depth)))
 			}
-			if diff := cmp.Diff(test.wants, got); diff != "" {
-				t.Errorf("unexpected indent bytes (-want +got):\n%s", diff)
+			if !reflect.DeepEqual(test.wants, got) {
+				t.Errorf("unexpected indent bytes: got %#v want %#v", got, test.wants)
 			}
 		})
 	}
@@ -175,8 +173,8 @@ func TestDumpStateTypeBytes(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			state := dumpState{cs: &ConfigState{LocalPackage: test.local}}
 			got := string(state.typeBytes(test.typ))
-			if diff := cmp.Diff(test.want, got); diff != "" {
-				t.Errorf("unexpected type bytes (-want +got):\n%s", diff)
+			if got != test.want {
+				t.Errorf("unexpected type bytes: got %q want %q", got, test.want)
 			}
 		})
 	}
@@ -210,8 +208,8 @@ func TestWriteBufferedChanInfo(t *testing.T) {
 			var buf bytes.Buffer
 			writeBufferedChanInfo(&buf, test.capacity, test.length)
 			got := buf.String()
-			if diff := cmp.Diff(test.want, got); diff != "" {
-				t.Errorf("unexpected buffered chan info (-want +got):\n%s", diff)
+			if got != test.want {
+				t.Errorf("unexpected buffered chan info: got %q want %q", got, test.want)
 			}
 		})
 	}
