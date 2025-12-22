@@ -24,7 +24,7 @@ import (
 	"os"
 )
 
-// ConfigState houses the configuration options used by utter to format and
+// ConfigState houses the configuration options used by dumper to format and
 // display values.  There is a global instance, Config, that is used to control
 // all top-level Formatter and Dump functionality.  Each ConfigState instance
 // provides methods equivalent to the top-level functions.
@@ -117,7 +117,7 @@ const (
 )
 
 // Config is the active configuration of the top-level functions.
-// The configuration can be changed by modifying the contents of utter.Config.
+// The configuration can be changed by modifying the contents of [Config].
 var Config = ConfigState{
 	Indent:       " ",
 	NumericWidth: 1,
@@ -126,8 +126,9 @@ var Config = ConfigState{
 	CommentBytes: true,
 }
 
-// Fdump formats and displays the passed arguments to io.Writer w.  It formats
-// exactly the same as Dump.
+// Fdump formats and displays the passed arguments to io.Writer w.
+//
+// It formats exactly the same as Dump.
 func (c *ConfigState) Fdump(w io.Writer, a any) {
 	fdump(c, w, a)
 }

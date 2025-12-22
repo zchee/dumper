@@ -843,7 +843,7 @@ package:
     which includes byte values in hex, and ASCII output
 
 The configuration options are controlled by an exported package global,
-utter.Config.  See ConfigState for options documentation.
+dumper.Config.  See ConfigState for options documentation.
 
 See Fdump if you would prefer dumping to an arbitrary io.Writer or Sdump to
 get the formatted result as a string.

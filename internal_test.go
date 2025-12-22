@@ -17,7 +17,7 @@
  */
 
 /*
-This test file is part of the utter package rather than than the utter_test
+This test file is part of the dumper package rather than than the dumper_test
 package because it needs access to internals to properly test certain cases
 which are not possible via the public interface since they should never happen.
 */
