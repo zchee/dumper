@@ -251,11 +251,15 @@ func hexDump(w io.Writer, data []byte, indent []byte, width int, comment, addr b
 	if width <= 0 {
 		width = 16 // This is the width used by hexdump -C, so it makes a reasonable default.
 	}
+	if len(data) == 0 {
+		return
+	}
 
 	var commentBytes []byte
 	if comment {
 		commentBytes = make([]byte, width)
 	}
+	needsPadding := comment && len(data) > width && len(data)%width != 0
 
 	addrWidth := 0
 	if addr {
@@ -266,62 +270,97 @@ func hexDump(w io.Writer, data []byte, indent []byte, width int, comment, addr b
 	}
 	var addrBuf [32]byte
 	var addrDigitsBuf [32]byte
-	for i, v := range data {
-		if i%width == 0 {
-			w.Write(indent)
-			if addr {
-				buf := addrBuf[:0]
-				buf = append(buf, '0', 'x')
-				digits := strconv.AppendUint(addrDigitsBuf[:0], uint64(i), 16)
-				if pad := addrWidth - len(digits); pad > 0 {
-					for range pad {
-						buf = append(buf, '0')
-					}
+	var padSpaces []byte
+	if needsPadding {
+		padSpaces = bytes.Repeat([]byte("      "), width)
+	}
+
+	lineCap := len(indent)
+	if addr {
+		lineCap += 2 + addrWidth + 2
+	}
+	lineCap += width * 6
+	if comment {
+		lineCap += len(commentPrefixBytes) + len(commentSuffixBytes) + width
+		if needsPadding {
+			lineCap += 12 + width*6
+		}
+	} else {
+		lineCap++
+	}
+
+	line := make([]byte, 0, lineCap)
+	for offset := 0; offset < len(data); offset += width {
+		line = line[:0]
+		line = append(line, indent...)
+		if addr {
+			buf := addrBuf[:0]
+			buf = append(buf, '0', 'x')
+			digits := strconv.AppendUint(addrDigitsBuf[:0], uint64(offset), 16)
+			if pad := addrWidth - len(digits); pad > 0 {
+				for range pad {
+					buf = append(buf, '0')
 				}
-				buf = append(buf, digits...)
-				buf = append(buf, ':', ' ')
-				w.Write(buf)
 			}
-		} else {
-			w.Write(spaceBytes)
+			buf = append(buf, digits...)
+			buf = append(buf, ':', ' ')
+			line = append(line, buf...)
 		}
 
-		w.Write(hexByteTable[v][:])
-		if comment {
-			if v < 32 || v > 126 {
-				v = '.'
+		lineLen := width
+		if remaining := len(data) - offset; remaining < width {
+			lineLen = remaining
+		}
+
+		for i := 0; i < lineLen; i++ {
+			if i > 0 {
+				line = append(line, ' ')
 			}
-			commentBytes[i%width] = v
+			b := data[offset+i]
+			line = append(line, hexByteTable[b][:]...)
+			if comment {
+				cb := b
+				if cb < 32 || cb > 126 {
+					cb = '.'
+				}
+				commentBytes[i] = cb
+			}
 		}
 
 		if !comment {
-			if i%width == width-1 || i == len(data)-1 {
-				w.Write(newlineBytes)
-			}
+			line = append(line, '\n')
+			w.Write(line)
 			continue
 		}
-		if i%width == width-1 {
-			w.Write(commentPrefixBytes)
-			w.Write(commentBytes[:])
-			w.Write(commentSuffixBytes)
-		} else if i == len(data)-1 {
-			if len(data) > width {
-				slots := width - i%width - 1
-				switch slots {
-				case 0:
-					// Do nothing.
-				case 1:
-					io.WriteString(w, " /* */")
-				default:
-					io.WriteString(w, " /*   ")
-					w.Write(bytes.Repeat([]byte("      "), slots-2))
-					io.WriteString(w, "    */")
-				}
-			}
-			w.Write(commentPrefixBytes)
-			w.Write(commentBytes[:len(data)%width])
-			w.Write(commentSuffixBytes)
+
+		if lineLen == width {
+			line = append(line, commentPrefixBytes...)
+			line = append(line, commentBytes[:width]...)
+			line = append(line, commentSuffixBytes...)
+			w.Write(line)
+			continue
 		}
+
+		if needsPadding {
+			slots := width - lineLen
+			switch slots {
+			case 0:
+				// Do nothing.
+			case 1:
+				line = append(line, ' ', '/', '*', ' ', '*', '/')
+			default:
+				line = append(line, ' ', '/', '*', ' ', ' ', ' ')
+				if padLen := (slots - 2) * 6; padLen > 0 {
+					line = append(line, padSpaces[:padLen]...)
+				}
+				line = append(line, ' ', ' ', ' ', ' ', '*', '/')
+			}
+		}
+
+		line = append(line, commentPrefixBytes...)
+		line = append(line, commentBytes[:lineLen]...)
+		line = append(line, commentSuffixBytes...)
+		w.Write(line)
 	}
 }
 
