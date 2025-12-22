@@ -596,7 +596,7 @@ func (d *dumpState) dump(v reflect.Value, wasPtr, static, canElideCompound bool,
 				continue
 			}
 			d.indent()
-			d.w.Write([]byte(vtf.Name))
+			io.WriteString(d.w, vtf.Name)
 			d.w.Write(colonSpaceBytes)
 			d.ignoreNextIndent = true
 			d.dump(unpacked, wasPtr, static, false, addr)
@@ -633,22 +633,28 @@ func (d *dumpState) dump(v reflect.Value, wasPtr, static, canElideCompound bool,
 
 // writeQuoted writes the string s quoted according to the quoting strategy.
 func (d *dumpState) writeQuoted(s string) {
+	var scratch [128]byte
+	appendQuote := func(value string) {
+		quoted := strconv.AppendQuote(scratch[:0], value)
+		d.w.Write(quoted)
+	}
+
 	switch d.cs.Quoting {
 	default:
 		fallthrough
 	case DoubleQuote:
-		io.WriteString(d.w, strconv.Quote(s))
+		appendQuote(s)
 
 	case AvoidEscapes:
 		if !needsEscape(s) || !canBackquoteString(s) {
-			io.WriteString(d.w, strconv.Quote(s))
+			appendQuote(s)
 			return
 		}
 		d.backQuote(s)
 
 	case AvoidEscapes | Force:
 		if !needsEscape(s) {
-			io.WriteString(d.w, strconv.Quote(s))
+			appendQuote(s)
 			return
 		}
 
@@ -671,7 +677,7 @@ func (d *dumpState) writeQuoted(s string) {
 						d.backQuote(s[last:i])
 					}
 				} else {
-					io.WriteString(d.w, strconv.Quote(s[last:i]))
+					appendQuote(s[last:i])
 				}
 				last = i
 				inBackquote = !inBackquote
@@ -682,7 +688,7 @@ func (d *dumpState) writeQuoted(s string) {
 				d.w.Write(plusBytes)
 			}
 			if !inBackquote {
-				io.WriteString(d.w, strconv.Quote(s[last:]))
+				appendQuote(s[last:])
 				return
 			}
 			d.backQuote(s[last:])
