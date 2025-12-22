@@ -71,6 +71,10 @@ type ConfigState struct {
 	// as comments.
 	CommentPointers bool
 
+	// EnableColor specifies whether Dump and Fdump should ANSI color
+	// sequences. Sdump never includes ANSI colors.
+	EnableColor bool
+
 	// IgnoreUnexported specifies that unexported struct fields should be
 	// ignored during a dump.
 	IgnoreUnexported bool
@@ -171,6 +175,7 @@ func (c *ConfigState) Sdump(a any) string {
 //		BytesWidth: 16
 //		CommentBytes: true
 //		CommentPointers: false
+//		DisableColor: false
 //	 IgnoreUnexported: false
 //	 ElideType: false
 //		SortKeys: false
@@ -181,5 +186,6 @@ func NewDefaultConfig() *ConfigState {
 		StringWidth:  1,
 		BytesWidth:   16,
 		CommentBytes: true,
+		EnableColor:  false,
 	}
 }

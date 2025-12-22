@@ -99,35 +99,41 @@ func ExampleDump() {
 		0x31, 0x32,
 	}
 
+	prev := dumper.Config.EnableColor
+	dumper.Config.EnableColor = true
+	defer func() {
+		dumper.Config.EnableColor = prev
+	}()
+
 	// Dump!
 	dumper.Dump([]any{s1, f, b})
 
 	// Output:
 	//
-	// []interface{}{
-	//  dumper_test.Foo{
-	//   unexportedField: dumper_test.Bar{
-	//    flag: dumper_test.Flag(1),
-	//    data: uintptr(0),
-	//   },
-	//   ExportedField: map[interface{}]interface{}{
-	//    string("one"): bool(true),
-	//   },
-	//  },
-	//  dumper_test.Flag(5),
-	//  []uint8{
-	//   0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f, 0x20, // |............... |
+	// [34;1m[]interface{}[0m[34;1m{
+	// [0m [37mdumper_test.Foo[0m[37m{
+	// [0m  unexportedField: [37mdumper_test.Bar[0m[37m{
+	// [0m   flag: [35mdumper_test.Flag[0m([35m1[0m),
+	//    data: [35muintptr[0m([35m0[0m),
+	//   [37m}[0m,
+	//   ExportedField: [96mmap[interface{}]interface{}[0m[96m{
+	// [0m   [32mstring[0m([32m"one"[0m): [33mbool[0m([33mtrue[0m),
+	//   [96m}[0m,
+	//  [37m}[0m,
+	//  [35mdumper_test.Flag[0m([35m5[0m),
+	//  [34;1m[]uint8[0m[34;1m{
+	// [0m[34;1m  0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f, 0x20, // |............... |
 	//   0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28, 0x29, 0x2a, 0x2b, 0x2c, 0x2d, 0x2e, 0x2f, 0x30, // |!"#$%&'()*+,-./0|
 	//   0x31, 0x32, /*                                                                               */ // |12|
-	//  },
-	// }
+	// [0m [34;1m}[0m,
+	// [34;1m}[0m
 }
 
 // This example demonstrates how to use a ConfigState.
 func ExampleConfigState() {
 	// Modify the indent level of the ConfigState only.  The global
 	// configuration is not modified.
-	scs := dumper.ConfigState{Indent: "\t"}
+	scs := dumper.ConfigState{Indent: "\t", EnableColor: true}
 
 	// Output using the ConfigState instance.
 	v := map[string]int{"one": 1}
@@ -135,17 +141,18 @@ func ExampleConfigState() {
 
 	// Output:
 	//
-	// map[string]int{
-	// 	string("one"): int(1),
-	// }
+	// [96mmap[string]int[0m[96m{
+	// [0m	[32mstring[0m([32m"one"[0m): [35mint[0m([35m1[0m),
+	// [96m}[0m
 }
 
 // This example demonstrates how to use a Quoting strategy.
 func ExampleConfigState_Quoting() {
 	scs := dumper.ConfigState{
-		Indent:    "\t",
-		ElideType: true,
-		SortKeys:  true,
+		Indent:      "\t",
+		ElideType:   true,
+		SortKeys:    true,
+		EnableColor: true,
 
 		// Avoid escape sequences when present and force
 		// use of backquotes even when the complete string is
@@ -163,22 +170,22 @@ func ExampleConfigState_Quoting() {
 
 	// Output:
 	//
-	// map[string]string{
-	// 	"1. one": `this
+	// [96mmap[string]string[0m[96m{
+	// [0m	[32m"1. one"[0m: [32m`this
 	// text
 	// spans
 	// lines
-	// `,
-	// 	"2. two": "this text doesn't",
-	// 	`3.
+	// `[0m,
+	// 	[32m"2. two"[0m: [32m"this text doesn't"[0m,
+	// 	[32m`3.
 	// t
 	// h
 	// r
 	// e
 	// e
-	// `: "vertical key",
-	// 	"4. four": `contains \backslashes\ and `+"`"+`backquotes`+"`",
-	// }
+	// `[0m: [32m"vertical key"[0m,
+	// 	[32m"4. four"[0m: [32m`contains \backslashes\ and `+"`"+`backquotes`+"`"[0m,
+	// [96m}[0m
 }
 
 // This example demonstrates how to use ConfigState.Dump to dump variables to
@@ -188,8 +195,8 @@ func ExampleConfigState_Dump() {
 	// example.
 
 	// Create two ConfigState instances with different indentation.
-	scs := dumper.ConfigState{Indent: "\t"}
-	scs2 := dumper.ConfigState{Indent: " "}
+	scs := dumper.ConfigState{Indent: "\t", EnableColor: true}
+	scs2 := dumper.ConfigState{Indent: " ", EnableColor: true}
 
 	// Setup some sample data structures for the example.
 	bar := Bar{Flag(flagTwo), uintptr(0)}
@@ -201,22 +208,22 @@ func ExampleConfigState_Dump() {
 
 	// Output:
 	//
-	// dumper_test.Foo{
-	// 	unexportedField: dumper_test.Bar{
-	// 		flag: dumper_test.Flag(1),
-	// 		data: uintptr(0),
-	// 	},
-	// 	ExportedField: map[interface{}]interface{}{
-	// 		string("one"): bool(true),
-	// 	},
-	// }
-	// dumper_test.Foo{
-	//  unexportedField: dumper_test.Bar{
-	//   flag: dumper_test.Flag(1),
-	//   data: uintptr(0),
-	//  },
-	//  ExportedField: map[interface{}]interface{}{
-	//   string("one"): bool(true),
-	//  },
-	// }
+	// [37mdumper_test.Foo[0m[37m{
+	// [0m	unexportedField: [37mdumper_test.Bar[0m[37m{
+	// [0m		flag: [35mdumper_test.Flag[0m([35m1[0m),
+	// 		data: [35muintptr[0m([35m0[0m),
+	// 	[37m}[0m,
+	// 	ExportedField: [96mmap[interface{}]interface{}[0m[96m{
+	// [0m		[32mstring[0m([32m"one"[0m): [33mbool[0m([33mtrue[0m),
+	// 	[96m}[0m,
+	// [37m}[0m
+	// [37mdumper_test.Foo[0m[37m{
+	// [0m unexportedField: [37mdumper_test.Bar[0m[37m{
+	// [0m  flag: [35mdumper_test.Flag[0m([35m1[0m),
+	//   data: [35muintptr[0m([35m0[0m),
+	//  [37m}[0m,
+	//  ExportedField: [96mmap[interface{}]interface{}[0m[96m{
+	// [0m  [32mstring[0m([32m"one"[0m): [33mbool[0m([33mtrue[0m),
+	//  [96m}[0m,
+	// [37m}[0m
 }

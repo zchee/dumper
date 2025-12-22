@@ -33,6 +33,10 @@ dumper.Fdump(someWriter, myVar1)
 str := dumper.Sdump(myVar1)
 ```
 
+Dump and Fdump emit ANSI-colored output by default. To disable colorization,
+set Config.DisableColor (or ConfigState.DisableColor). Sdump is always
+uncolored for stable snapshot strings.
+
 ## Sample Dump Output
 
 ```go
@@ -46,6 +50,9 @@ main.Foo{
  },
 }
 ```
+
+Note: The sample output is shown without ANSI color sequences. Dump and Fdump
+emit colored output by default unless DisableColor is set.
 
 ```go
 []uint8{
@@ -91,6 +98,10 @@ options. See the ConfigState documentation for more details.
 * CommentPointers
 	CommentPointers specifies whether pointer information will be added
 	as comments.
+
+* DisableColor
+	DisableColor specifies whether Dump and Fdump should omit ANSI color
+	sequences. Sdump never includes ANSI colors.
 
 * IgnoreUnexported
 	Specifies that unexported fields should be ignored.

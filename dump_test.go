@@ -856,7 +856,7 @@ func TestDump(t *testing.T) {
 	for i, test := range dumpTests {
 		buf := new(bytes.Buffer)
 		dumper.Fdump(buf, test.in)
-		s := buf.String()
+		s := stripANSI(buf.String())
 		if testFailed(s, test.wants) {
 			t.Errorf("Dump #%d\n got: %q\n %s", i, s, stringizeWants(test.wants))
 			continue
@@ -1091,7 +1091,7 @@ func TestIssue5Slices(t *testing.T) {
 				}
 			}()
 			dumper.Fdump(w, tt.v)
-			got := w.buf.String()
+			got := stripANSI(w.buf.String())
 			if got != tt.want {
 				t.Errorf("unexpected value:\ngot:\n%swant:\n%s", got, tt.want)
 			}
@@ -1209,7 +1209,7 @@ func TestIssue5Maps(t *testing.T) {
 				}
 			}()
 			dumper.Fdump(w, tt.v)
-			got := w.buf.String()
+			got := stripANSI(w.buf.String())
 			if got != tt.want {
 				t.Errorf("unexpected value:\ngot:\n%swant:\n%s", got, tt.want)
 			}
