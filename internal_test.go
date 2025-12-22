@@ -207,7 +207,8 @@ func TestWriteBufferedChanInfo(t *testing.T) {
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
 			var buf bytes.Buffer
-			writeBufferedChanInfo(&buf, test.capacity, test.length)
+			var scratch [64]byte
+			writeBufferedChanInfo(&buf, scratch[:0], test.capacity, test.length)
 			got := buf.String()
 			if got != test.want {
 				t.Errorf("unexpected buffered chan info: got %q want %q", got, test.want)

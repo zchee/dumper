@@ -68,6 +68,7 @@ type dumpState struct {
 	indentUnit       []byte
 	indentCache      [][]byte
 	typeCache        map[reflect.Type][]byte
+	scratch          [128]byte
 }
 
 // indent performs indentation according to the depth level and cs.Indent
@@ -119,15 +120,15 @@ func (d *dumpState) typeBytes(typ reflect.Type) []byte {
 	return converted
 }
 
-func writeBufferedChanInfo(w io.Writer, capacity, length int) {
+func writeBufferedChanInfo(w io.Writer, scratch []byte, capacity, length int) {
 	w.Write(commaSpaceBytes)
-	printInt(w, int64(capacity), 10)
+	printInt(w, scratch, int64(capacity), 10)
 	if length == 0 {
 		return
 	}
 	w.Write(openCommentBytes)
 	w.Write(spaceBytes)
-	printInt(w, int64(length), 10)
+	printInt(w, scratch, int64(length), 10)
 	w.Write(spaceBytes)
 	if length == 1 {
 		io.WriteString(w, "element")
@@ -222,7 +223,7 @@ func (d *dumpState) dumpPtr(v reflect.Value) {
 	}
 	d.w.Write(typeBytes)
 	if bufferedChan {
-		writeBufferedChanInfo(d.w, v.Cap(), v.Len())
+		writeBufferedChanInfo(d.w, d.scratch[:0], v.Cap(), v.Len())
 	}
 	if displayed || bufferedChan || kind == reflect.Pointer {
 		d.w.Write(closeParenBytes)
@@ -432,7 +433,7 @@ func (d *dumpState) dump(v reflect.Value, wasPtr, static, canElideCompound bool,
 			typeBytes := d.typeBytes(v.Type())
 			d.w.Write(typeBytes)
 			if bufferedChan {
-				writeBufferedChanInfo(d.w, v.Cap(), v.Len())
+				writeBufferedChanInfo(d.w, d.scratch[:0], v.Cap(), v.Len())
 				d.w.Write(closeParenBytes)
 			}
 		}
@@ -461,23 +462,23 @@ func (d *dumpState) dump(v reflect.Value, wasPtr, static, canElideCompound bool,
 		printBool(d.w, v.Bool())
 
 	case reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Int:
-		printInt(d.w, v.Int(), 10)
+		printInt(d.w, d.scratch[:0], v.Int(), 10)
 
 	case reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uint:
 		d.w.Write(hexZeroBytes)
-		printUint(d.w, v.Uint(), 16)
+		printUint(d.w, d.scratch[:0], v.Uint(), 16)
 
 	case reflect.Float32:
-		printFloat(d.w, v.Float(), 32, !wantType)
+		printFloat(d.w, d.scratch[:0], v.Float(), 32, !wantType)
 
 	case reflect.Float64:
-		printFloat(d.w, v.Float(), 64, !wantType)
+		printFloat(d.w, d.scratch[:0], v.Float(), 64, !wantType)
 
 	case reflect.Complex64:
-		printComplex(d.w, v.Complex(), 32)
+		printComplex(d.w, d.scratch[:0], v.Complex(), 32)
 
 	case reflect.Complex128:
-		printComplex(d.w, v.Complex(), 64)
+		printComplex(d.w, d.scratch[:0], v.Complex(), 64)
 
 	case reflect.Slice:
 		if v.IsNil() {

@@ -205,24 +205,21 @@ func printBool(w io.Writer, val bool) {
 }
 
 // printInt outputs a signed integer value to Writer w.
-func printInt(w io.Writer, val int64, base int) {
-	var buf [64]byte
-	formatted := strconv.AppendInt(buf[:0], val, base)
+func printInt(w io.Writer, scratch []byte, val int64, base int) {
+	formatted := strconv.AppendInt(scratch[:0], val, base)
 	w.Write(formatted)
 }
 
 // printUint outputs an unsigned integer value to Writer w.
-func printUint(w io.Writer, val uint64, base int) {
-	var buf [64]byte
-	formatted := strconv.AppendUint(buf[:0], val, base)
+func printUint(w io.Writer, scratch []byte, val uint64, base int) {
+	formatted := strconv.AppendUint(scratch[:0], val, base)
 	w.Write(formatted)
 }
 
 // printFloat outputs a floating point value using the specified precision,
 // which is expected to be 32 or 64bit, to Writer w.
-func printFloat(w io.Writer, val float64, precision int, typeElided bool) {
-	var buf [64]byte
-	formatted := strconv.AppendFloat(buf[:0], val, 'g', -1, precision)
+func printFloat(w io.Writer, scratch []byte, val float64, precision int, typeElided bool) {
+	formatted := strconv.AppendFloat(scratch[:0], val, 'g', -1, precision)
 	if typeElided && !math.IsInf(val, 0) && val == math.Floor(val) {
 		formatted = append(formatted, '.', '0')
 	}
@@ -231,9 +228,8 @@ func printFloat(w io.Writer, val float64, precision int, typeElided bool) {
 
 // printComplex outputs a complex value using the specified float precision
 // for the real and imaginary parts to Writer w.
-func printComplex(w io.Writer, c complex128, floatPrecision int) {
-	var buf [128]byte
-	formatted := strconv.AppendFloat(buf[:0], real(c), 'g', -1, floatPrecision)
+func printComplex(w io.Writer, scratch []byte, c complex128, floatPrecision int) {
+	formatted := strconv.AppendFloat(scratch[:0], real(c), 'g', -1, floatPrecision)
 	if imag(c) >= 0 {
 		formatted = append(formatted, '+')
 	}
